@@ -1,25 +1,45 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Mail, Settings, User, ArrowRight, Plus, Download, Send } from "lucide-react";
-import AzureLoginButton from "@/components/AzureLoginButton";
-import UserProfile from "@/components/UserProfile";
-import WordTemplateManager from "@/components/WordTemplateManager";
-import { useState } from "react";
+import { 
+  User, 
+  Mail, 
+  Building, 
+  Settings, 
+  FileText, 
+  Download, 
+  Send,
+  LogOut,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from "lucide-react";
+import DashboardUserProfile from "@/components/DashboardUserProfile";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const { data: session, status } = useSession();
-  const [activeTab, setActiveTab] = useState("templates");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-gray-600">Chargement du tableau de bord...</p>
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
         </div>
       </div>
     );
@@ -27,43 +47,45 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center bg-white rounded-xl shadow-lg p-8 max-w-md mx-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Accès Requis
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Vous devez être connecté pour accéder au tableau de bord
-          </p>
-          <AzureLoginButton size="lg" className="w-full justify-center" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Accès non autorisé</h2>
+          <p className="text-gray-600 mb-4">Vous devez être connecté pour accéder au dashboard.</p>
+          <a 
+            href="/login" 
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Se connecter
+          </a>
         </div>
       </div>
     );
   }
 
-  const tabs = [
-    { id: "templates", label: "Modèles", icon: <FileText className="w-5 h-5" /> },
-    { id: "signatures", label: "Signatures", icon: <Download className="w-5 h-5" /> },
-    { id: "emails", label: "Emails", icon: <Mail className="w-5 h-5" /> },
-    { id: "settings", label: "Paramètres", icon: <Settings className="w-5 h-5" /> }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">SignatureApp</h1>
+            <div className="flex items-center">
+              <FileText className="w-8 h-8 text-blue-600 mr-3" />
+              <h1 className="text-2xl font-bold text-gray-900">Signature App</h1>
             </div>
-            <AzureLoginButton variant="outline" size="sm" />
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">{session.user?.name}</p>
+                <p className="text-xs text-gray-500">{session.user?.email}</p>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -71,175 +93,217 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
+          {/* User Profile Sidebar */}
           <div className="lg:col-span-1">
-            <UserProfile />
-            
-            {/* Navigation */}
-            <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Navigation
-              </h3>
-              <nav className="space-y-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
+            <DashboardUserProfile />
           </div>
 
-          {/* Main Content Area */}
-          <div className="lg:col-span-3">
+          {/* Dashboard Content */}
+          <div className="lg:col-span-3 space-y-8">
             {/* Welcome Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-8 mb-8"
+              transition={{ duration: 0.5 }}
+              className="bg-white rounded-2xl shadow-lg p-8"
             >
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-4">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Bonjour, {session.user?.name?.split(' ')[0]} !
+                    Bienvenue, {session.user?.name?.split(' ')[0]} !
                   </h2>
                   <p className="text-gray-600">
-                    Gérez vos modèles et signatures depuis votre tableau de bord
+                    Vous êtes connecté avec votre compte Microsoft
                   </p>
                 </div>
-                <div className="flex space-x-3">
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
-                    <Plus className="w-4 h-4" />
-                    <span>Nouveau</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-blue-600 font-medium">Modèles</p>
-                      <p className="text-2xl font-bold text-blue-900">3</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <Download className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="text-sm text-green-600 font-medium">Signatures</p>
-                      <p className="text-2xl font-bold text-green-900">12</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <Send className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <p className="text-sm text-purple-600 font-medium">Envoyés</p>
-                      <p className="text-2xl font-bold text-purple-900">8</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </motion.div>
 
-            {/* Tab Content */}
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+        {/* Signature Features Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-blue-50 rounded-xl p-8"
+          >
+            <h3 className="text-xl font-semibold text-blue-900 mb-4">
+              Prêt à créer vos signatures
+            </h3>
+            <p className="text-blue-700 text-sm mb-6">
+              Accédez à vos modèles Word depuis Azure Storage et générez vos signatures personnalisées.
+            </p>
+            <a 
+              href="/signatures"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
             >
-              {activeTab === "templates" && (
-                <div className="space-y-6">
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">
-                      Gestion des Modèles
-                    </h3>
-                    <WordTemplateManager
-                      onTemplateLoaded={(buffer) => {
-                        console.log("Template chargé:", buffer.length, "bytes");
-                      }}
-                      onError={(error) => {
-                        console.error("Erreur:", error);
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+              Commencer
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </motion.div>
 
-              {activeTab === "signatures" && (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    Mes Signatures
-                  </h3>
-                  <div className="text-center py-12">
-                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Aucune signature générée pour le moment</p>
-                    <button className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                      Créer ma première signature
-                    </button>
-                  </div>
-                </div>
-              )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-purple-50 rounded-xl p-8"
+          >
+            <h3 className="text-xl font-semibold text-purple-900 mb-4">
+              Envoi automatique
+            </h3>
+            <p className="text-purple-700 text-sm mb-6">
+              Vos signatures seront automatiquement envoyées dans votre boîte Outlook.
+            </p>
+            <a 
+              href="/graph-api-test"
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors inline-flex items-center"
+            >
+              Configurer
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </motion.div>
+        </div>
 
-              {activeTab === "emails" && (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    Historique des Emails
-                  </h3>
-                  <div className="text-center py-12">
-                    <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Aucun email envoyé pour le moment</p>
-                    <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                      Envoyer un email
-                    </button>
-                  </div>
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Signature Management */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="bg-white rounded-2xl shadow-lg p-8"
+          >
+            <div className="flex items-center mb-6">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                <FileText className="w-6 h-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Gestion des Signatures</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center">
+                  <Download className="w-5 h-5 text-gray-600 mr-3" />
+                  <span className="text-gray-700">Modèles disponibles</span>
                 </div>
-              )}
+                <span className="text-sm text-gray-500">3 modèles</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center">
+                  <Send className="w-5 h-5 text-gray-600 mr-3" />
+                  <span className="text-gray-700">Signatures envoyées</span>
+                </div>
+                <span className="text-sm text-gray-500">12 ce mois</span>
+              </div>
+            </div>
 
-              {activeTab === "settings" && (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    Paramètres
-                  </h3>
-                  <div className="space-y-6">
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">Compte Microsoft</h4>
-                      <p className="text-gray-600 text-sm mb-3">
-                        Connecté avec {session.user?.email}
-                      </p>
-                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                        Gérer le compte
-                      </button>
-                    </div>
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">Notifications</h4>
-                      <p className="text-gray-600 text-sm mb-3">
-                        Recevez des notifications par email
-                      </p>
-                      <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
-                        <span className="text-sm text-gray-700">Activer les notifications</span>
-                      </label>
-                    </div>
-                  </div>
+            <a 
+              href="/signatures"
+              className="w-full mt-6 bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors inline-block text-center"
+            >
+              Gérer les signatures
+            </a>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="bg-white rounded-2xl shadow-lg p-8"
+          >
+            <div className="flex items-center mb-6">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                <Settings className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Actions Rapides</h3>
+            </div>
+            
+            <div className="space-y-3">
+              <a 
+                href="/signatures"
+                className="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center">
+                  <FileText className="w-5 h-5 text-blue-600 mr-3" />
+                  <span className="text-gray-700">Créer une signature</span>
                 </div>
-              )}
-            </motion.div>
+                <span className="text-blue-600">→</span>
+              </a>
+              
+              <a 
+                href="/template-test"
+                className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center">
+                  <Download className="w-5 h-5 text-green-600 mr-3" />
+                  <span className="text-gray-700">Télécharger un modèle</span>
+                </div>
+                <span className="text-green-600">→</span>
+              </a>
+              
+              <a 
+                href="/graph-api-test"
+                className="w-full flex items-center justify-between p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center">
+                  <Send className="w-5 h-5 text-purple-600 mr-3" />
+                  <span className="text-gray-700">Envoyer par email</span>
+                </div>
+                <span className="text-purple-600">→</span>
+              </a>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="bg-white rounded-2xl shadow-lg p-8 mt-8"
+        >
+          <div className="flex items-center mb-6">
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+              <Clock className="w-6 h-6 text-orange-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Activité Récente</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-4"></div>
+              <div className="flex-1">
+                <p className="text-gray-900 font-medium">Signature créée</p>
+                <p className="text-sm text-gray-500">Il y a 2 heures</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-4"></div>
+              <div className="flex-1">
+                <p className="text-gray-900 font-medium">Modèle téléchargé</p>
+                <p className="text-sm text-gray-500">Il y a 1 jour</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mr-4"></div>
+              <div className="flex-1">
+                <p className="text-gray-900 font-medium">Email envoyé</p>
+                <p className="text-sm text-gray-500">Il y a 3 jours</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
           </div>
         </div>
       </main>

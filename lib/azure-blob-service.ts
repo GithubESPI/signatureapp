@@ -5,7 +5,8 @@ export class AzureBlobService {
   private blobServiceClient: BlobServiceClient;
   private containerName: string;
 
-  constructor(connectionString: string, containerName: string = "signatures") {
+  constructor(connectionString: string, containerName: string = "templatesignature") {
+    // Utiliser la chaîne de connexion pour créer le client BlobService
     this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     this.containerName = containerName;
   }
@@ -107,5 +108,5 @@ export class AzureBlobService {
 // Instance singleton pour l'application
 export const azureBlobService = new AzureBlobService(
   process.env.AZURE_STORAGE_CONNECTION_STRING || "",
-  process.env.AZURE_STORAGE_CONTAINER_NAME || "signatures"
+  process.env.AZURE_STORAGE_CONTAINER_NAME || "templatesignature"
 );

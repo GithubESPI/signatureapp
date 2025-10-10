@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import WordTemplateManager from "@/components/WordTemplateManager";
+import SasConnectionTest from "@/components/SasConnectionTest";
 
 export default function TemplateTestPage() {
   const [loadedTemplate, setLoadedTemplate] = useState<Buffer | null>(null);
@@ -27,6 +28,11 @@ export default function TemplateTestPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Test de Récupération des Modèles Word
         </h1>
+
+        {/* Test de connexion SAS */}
+        <div className="mb-8">
+          <SasConnectionTest />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Composant de gestion des modèles */}
@@ -69,13 +75,14 @@ export default function TemplateTestPage() {
         {/* Instructions */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-blue-900 mb-3">
-            Instructions de Configuration
+            Instructions de Configuration Azure Storage
           </h3>
           <div className="text-blue-800 space-y-2">
-            <p><strong>1. Variables d'environnement:</strong> Assurez-vous d'avoir configuré les variables dans votre fichier <code>.env.local</code></p>
-            <p><strong>2. Azure Storage:</strong> Votre container "signatures" doit contenir des fichiers .docx</p>
-            <p><strong>3. Permissions:</strong> Vérifiez que votre connection string a les permissions de lecture</p>
-            <p><strong>4. Test:</strong> Utilisez ce composant pour tester la récupération de vos modèles</p>
+            <p><strong>1. Chaîne de connexion:</strong> Configurez <code>AZURE_STORAGE_CONNECTION_STRING</code> dans votre fichier <code>.env</code></p>
+            <p><strong>2. Container:</strong> Votre container "templatesignature" doit contenir des fichiers .docx</p>
+            <p><strong>3. Permissions:</strong> Assurez-vous que votre compte de stockage a les permissions de lecture</p>
+            <p><strong>4. Test de connexion:</strong> Utilisez le test de connexion ci-dessus pour vérifier la configuration</p>
+            <p><strong>5. Documentation:</strong> Consultez <code>ENVIRONMENT_SETUP.md</code> pour plus de détails</p>
           </div>
         </div>
       </div>

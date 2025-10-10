@@ -12,7 +12,9 @@ export default function Navigation() {
   const navItems = [
     { href: "/", label: "Accueil", icon: <Home className="w-5 h-5" /> },
     { href: "/dashboard", label: "Dashboard", icon: <FileText className="w-5 h-5" /> },
+    { href: "/signatures", label: "Signatures", icon: <FileText className="w-5 h-5" /> },
     { href: "/template-test", label: "Test Modèles", icon: <FileText className="w-5 h-5" /> },
+    { href: "/graph-api-test", label: "Graph API", icon: <FileText className="w-5 h-5" /> },
   ];
 
   return (

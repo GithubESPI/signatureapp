@@ -2,13 +2,10 @@
 
 import { useSession } from "next-auth/react";
 import WelcomeSection from "@/components/WelcomeSection";
-import AzureLoginButton from "@/components/AzureLoginButton";
-import UserProfile from "@/components/UserProfile";
 import Navigation from "@/components/Navigation";
-import NoSSR from "@/components/NoSSR";
-import { motion } from "framer-motion";
 import { FileText, ArrowRight, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   return <HomeContent />;
@@ -35,10 +32,12 @@ function HomeContent() {
     );
   }
 
+  // Si l'utilisateur n'est pas connecté, afficher la page de bienvenue
   if (!session) {
     return <WelcomeSection />;
   }
 
+  // Si l'utilisateur est connecté, afficher la page d'accueil avec option de redirection
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navigation />
@@ -48,7 +47,37 @@ function HomeContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Profile */}
           <div className="lg:col-span-1">
-            <UserProfile />
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{session.user?.name}</h3>
+                  <p className="text-sm text-gray-500">Compte Microsoft connecté</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Statut de la session</p>
+                    <p className="text-sm text-green-600">Actif</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <a 
+                  href="/dashboard"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors inline-block text-center"
+                >
+                  Accéder au Dashboard
+                  <ArrowRight className="w-4 h-4 inline ml-2" />
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Dashboard Content */}
@@ -81,10 +110,13 @@ function HomeContent() {
                   <p className="text-blue-700 text-sm mb-4">
                     Accédez à vos modèles Word depuis Azure Storage et générez vos signatures personnalisées.
                   </p>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                  <a 
+                    href="/signatures"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
+                  >
                     Commencer
                     <ArrowRight className="w-4 h-4 inline ml-2" />
-                  </button>
+                  </a>
                 </div>
 
                 <div className="bg-purple-50 rounded-lg p-6">
@@ -94,10 +126,13 @@ function HomeContent() {
                   <p className="text-purple-700 text-sm mb-4">
                     Vos signatures seront automatiquement envoyées dans votre boîte Outlook.
                   </p>
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                  <a 
+                    href="/graph-api-test"
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors inline-flex items-center"
+                  >
                     Configurer
                     <ArrowRight className="w-4 h-4 inline ml-2" />
-                  </button>
+                  </a>
                 </div>
               </div>
             </motion.div>
@@ -114,26 +149,35 @@ function HomeContent() {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 group">
+                <a 
+                  href="/signatures"
+                  className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 group"
+                >
                   <FileText className="w-6 h-6 text-gray-400 group-hover:text-blue-600" />
                   <span className="text-gray-600 group-hover:text-blue-600 font-medium">
                     Nouveau modèle
                   </span>
-                </button>
+                </a>
 
-                <button className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all duration-300 group">
+                <a 
+                  href="/signatures"
+                  className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all duration-300 group"
+                >
                   <CheckCircle className="w-6 h-6 text-gray-400 group-hover:text-green-600" />
                   <span className="text-gray-600 group-hover:text-green-600 font-medium">
                     Générer signature
                   </span>
-                </button>
+                </a>
 
-                <button className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all duration-300 group">
+                <a 
+                  href="/graph-api-test"
+                  className="flex items-center justify-center space-x-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all duration-300 group"
+                >
                   <ArrowRight className="w-6 h-6 text-gray-400 group-hover:text-purple-600" />
                   <span className="text-gray-600 group-hover:text-purple-600 font-medium">
                     Envoyer par email
                   </span>
-                </button>
+                </a>
               </div>
             </motion.div>
           </div>

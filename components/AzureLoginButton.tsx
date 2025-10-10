@@ -29,7 +29,7 @@ export default function AzureLoginButton({
     try {
       await signIn("azure-ad", { 
         callbackUrl: "/dashboard",
-        redirect: true 
+        redirect: false 
       });
     } catch (error) {
       console.error("Erreur de connexion:", error);
