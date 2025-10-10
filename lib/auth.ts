@@ -1,28 +1,12 @@
 import AzureADProvider from "next-auth/providers/azure-ad";
 import type { NextAuthOptions } from "next-auth";
 
-// Configuration robuste avec fallbacks
-const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
-const NEXTAUTH_URL = process.env.NEXTAUTH_URL;
-
 console.log("🔧 [Auth] Configuration NextAuth chargée");
-console.log("🔧 [Auth] NEXTAUTH_SECRET:", NEXTAUTH_SECRET ? "✅ Présent" : "❌ Manquant");
-console.log("🔧 [Auth] NEXTAUTH_URL:", NEXTAUTH_URL ? "✅ Présent" : "❌ Manquant");
+console.log("🔧 [Auth] NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "✅ Présent" : "❌ Manquant");
+console.log("🔧 [Auth] NEXTAUTH_URL:", process.env.NEXTAUTH_URL ? "✅ Présent" : "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_CLIENT_ID:", process.env.AZURE_AD_CLIENT_ID ? "✅ Présent" : "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_CLIENT_SECRET:", process.env.AZURE_AD_CLIENT_SECRET ? "✅ Présent" : "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_TENANT_ID:", process.env.AZURE_AD_TENANT_ID ? "✅ Présent" : "❌ Manquant");
-
-// Vérifier que le secret est bien défini
-if (!NEXTAUTH_SECRET) {
-  console.error("❌ [Auth] NEXTAUTH_SECRET est manquant !");
-  throw new Error("NEXTAUTH_SECRET is required");
-}
-
-// Vérifier que l'URL est bien définie
-if (!NEXTAUTH_URL) {
-  console.error("❌ [Auth] NEXTAUTH_URL est manquant !");
-  throw new Error("NEXTAUTH_URL is required");
-}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -58,7 +42,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "CCDtuslb47m68jql1f17EXGvn7H/6TAkiRz0kayQOTw=",
   debug: true,
   // Ajouter des options supplémentaires pour résoudre le problème de secret
   useSecureCookies: false,
