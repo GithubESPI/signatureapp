@@ -1,36 +1,172 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SignatureApp - Générateur de Signatures
 
-## Getting Started
+Application Next.js pour la génération et l'envoi automatique de signatures personnalisées via Azure et Microsoft Graph.
 
-First, run the development server:
+## 🚀 Fonctionnalités
 
+- **Authentification Azure AD** : Connexion sécurisée avec NextAuth
+- **Récupération de modèles** : Accès aux modèles Word depuis Azure Blob Storage
+- **Génération de signatures** : Création de signatures personnalisées
+- **Envoi automatique** : Envoi direct dans Outlook via Microsoft Graph API
+- **Interface moderne** : Design responsive avec Framer Motion
+
+## 🛠️ Technologies
+
+- **Frontend** : Next.js 15, React 19, TypeScript
+- **Styling** : Tailwind CSS
+- **Animations** : Framer Motion
+- **Icons** : Lucide React
+- **Authentification** : NextAuth.js avec Azure AD
+- **Storage** : Azure Blob Storage
+- **Email** : Microsoft Graph API
+
+## 📋 Prérequis
+
+- Node.js 18+
+- Compte Azure avec :
+  - Azure AD (pour l'authentification)
+  - Storage Account (pour les modèles Word)
+  - Permissions Microsoft Graph (pour l'envoi d'emails)
+
+## ⚙️ Installation
+
+1. **Cloner le projet**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd signature-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Installer les dépendances**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Configuration des variables d'environnement**
+Créez un fichier `.env.local` basé sur `env.example` :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Azure AD Configuration (NextAuth)
+AZURE_AD_CLIENT_ID=your_azure_ad_client_id
+AZURE_AD_CLIENT_SECRET=your_azure_ad_client_secret
+AZURE_AD_TENANT_ID=your_azure_ad_tenant_id
 
-## Learn More
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_key
 
-To learn more about Next.js, take a look at the following resources:
+# Azure Storage Configuration
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=your_storage_account;AccountKey=your_storage_key;EndpointSuffix=core.windows.net
+AZURE_STORAGE_CONTAINER_NAME=signatures
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Microsoft Graph API (pour l'envoi d'emails)
+MICROSOFT_GRAPH_CLIENT_ID=your_graph_client_id
+MICROSOFT_GRAPH_CLIENT_SECRET=your_graph_client_secret
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Démarrer l'application**
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+L'application sera accessible sur [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🏗️ Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+├── api/auth/[...nextauth].ts    # Configuration NextAuth
+├── page.tsx                     # Page d'accueil
+├── login/page.tsx              # Page de connexion
+├── dashboard/page.tsx          # Tableau de bord
+└── template-test/page.tsx      # Test des modèles
+
+components/
+├── WelcomeSection.tsx          # Section d'accueil
+├── AzureLoginButton.tsx        # Bouton de connexion
+├── UserProfile.tsx             # Profil utilisateur
+└── WordTemplateManager.tsx     # Gestion des modèles
+
+lib/
+├── azure-blob-service.ts       # Service Azure Blob Storage
+└── azure-error-handler.ts      # Gestion d'erreurs
+```
+
+## 🔧 Configuration Azure
+
+### 1. Azure AD App Registration
+1. Créez une nouvelle app registration dans Azure AD
+2. Configurez les redirect URIs : `http://localhost:3000/api/auth/callback/azure-ad`
+3. Générez un client secret
+4. Notez le Client ID et Tenant ID
+
+### 2. Azure Storage Account
+1. Créez un Storage Account
+2. Créez un container nommé "signatures"
+3. Uploadez vos modèles Word (.docx)
+4. Récupérez la connection string
+
+### 3. Microsoft Graph API
+1. Ajoutez les permissions Graph API nécessaires
+2. Configurez les scopes : `Mail.Send`, `User.Read`
+
+## 📱 Pages de l'Application
+
+- **/** : Page d'accueil avec présentation
+- **/login** : Page de connexion dédiée
+- **/dashboard** : Tableau de bord utilisateur
+- **/template-test** : Test de récupération des modèles
+
+## 🎨 Design
+
+- **Design System** : Interface moderne avec gradients
+- **Responsive** : Adaptatif mobile/desktop
+- **Animations** : Transitions fluides avec Framer Motion
+- **Accessibilité** : Navigation clavier et screen readers
+
+## 🚀 Déploiement
+
+### Vercel (Recommandé)
+1. Connectez votre repository GitHub
+2. Configurez les variables d'environnement
+3. Déployez automatiquement
+
+### Autres plateformes
+- Azure App Service
+- Netlify
+- AWS Amplify
+
+## 🔒 Sécurité
+
+- Authentification OAuth 2.0 avec Azure AD
+- Sessions sécurisées avec NextAuth
+- Variables d'environnement protégées
+- HTTPS obligatoire en production
+
+## 📊 Monitoring
+
+- Logs d'erreurs Azure
+- Métriques d'utilisation
+- Monitoring des performances
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créez une branche feature
+3. Committez vos changements
+4. Push vers la branche
+5. Ouvrez une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+
+## 🆘 Support
+
+Pour toute question ou problème :
+- Créez une issue sur GitHub
+- Consultez la documentation Azure
+- Contactez l'équipe de développement
+
+---
+
+**SignatureApp** - Powered by Microsoft Azure & Next.js
