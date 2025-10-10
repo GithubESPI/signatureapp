@@ -17,6 +17,10 @@ import {
   AlertCircle
 } from "lucide-react";
 import DashboardUserProfile from "@/components/DashboardUserProfile";
+import WordTemplateManager from "@/components/WordTemplateManager";
+import SignatureGenerator from "@/components/SignatureGenerator";
+import OutlookSignatureManager from "@/components/OutlookSignatureManager";
+import TokenDebugger from "@/components/TokenDebugger";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -170,6 +174,47 @@ export default function Dashboard() {
             </a>
           </motion.div>
         </div>
+
+        {/* Word Templates Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <WordTemplateManager />
+        </motion.div>
+
+                   {/* Signature Generator Section */}
+                   <motion.div
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ duration: 0.5, delay: 0.8 }}
+                   >
+                     <SignatureGenerator />
+                   </motion.div>
+
+                   {/* Outlook Signature Manager Section */}
+                   <motion.div
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ duration: 0.5, delay: 1.0 }}
+                   >
+                     <OutlookSignatureManager 
+                       signatureHtml=""
+                       onSignatureSent={() => {
+                         console.log("Signature envoyée vers Outlook");
+                       }}
+                     />
+                   </motion.div>
+
+                   {/* Token Debugger Section */}
+                   <motion.div
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ duration: 0.5, delay: 1.2 }}
+                   >
+                     <TokenDebugger />
+                   </motion.div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

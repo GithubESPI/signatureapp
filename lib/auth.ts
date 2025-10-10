@@ -9,16 +9,33 @@ console.log("🔧 [Auth] AZURE_AD_CLIENT_SECRET:", process.env.AZURE_AD_CLIENT_S
 console.log("🔧 [Auth] AZURE_AD_TENANT_ID:", process.env.AZURE_AD_TENANT_ID ? "✅ Présent" : "❌ Manquant");
 
 export const authOptions: NextAuthOptions = {
-  providers: [
-    AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID || "",
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
-      tenantId: process.env.AZURE_AD_TENANT_ID || "",
-    }),
-  ],
+        providers: [
+          AzureADProvider({
+            clientId: process.env.AZURE_AD_CLIENT_ID || "",
+            clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
+            tenantId: process.env.AZURE_AD_TENANT_ID || "",
+            authorization: {
+              params: {
+                scope: "openid profile email User.Read Mail.ReadWrite MailboxSettings.ReadWrite"
+              }
+            },
+            // Ajouter des logs pour vérifier les scopes
+            profile(profile) {
+              console.log("🔧 [Auth] Profile reçu:", profile);
+              return {
+                id: profile.sub,
+                name: profile.name,
+                email: profile.email,
+                image: profile.picture,
+              };
+            }
+          }),
+        ],
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
+        console.log("🔧 [Auth] Token reçu avec scopes:", account.scope);
+        console.log("🔧 [Auth] Access token présent:", !!account.access_token);
         token.accessToken = account.access_token;
       }
       return token;

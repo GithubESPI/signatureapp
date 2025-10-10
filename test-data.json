@@ -1,0 +1,12 @@
+{
+  "templateName": "model_signature.docx",
+  "userData": {
+    "prenom": "Test",
+    "nom": "User", 
+    "fonction": "Employé ESPI",
+    "telephone": "",
+    "adresse": "",
+    "ville": "Paris",
+    "email": "test@example.com"
+  }
+}
