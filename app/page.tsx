@@ -102,39 +102,7 @@ function HomeContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                    Prêt à créer vos signatures
-                  </h3>
-                  <p className="text-blue-700 text-sm mb-4">
-                    Accédez à vos modèles Word depuis Azure Storage et générez vos signatures personnalisées.
-                  </p>
-                  <a 
-                    href="/signatures"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
-                  >
-                    Commencer
-                    <ArrowRight className="w-4 h-4 inline ml-2" />
-                  </a>
-                </div>
-
-                <div className="bg-purple-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-purple-900 mb-2">
-                    Envoi automatique
-                  </h3>
-                  <p className="text-purple-700 text-sm mb-4">
-                    Vos signatures seront automatiquement envoyées dans votre boîte Outlook.
-                  </p>
-                  <a 
-                    href="/graph-api-test"
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors inline-flex items-center"
-                  >
-                    Configurer
-                    <ArrowRight className="w-4 h-4 inline ml-2" />
-                  </a>
-                </div>
-              </div>
+              
             </motion.div>
 
             {/* Quick Actions */}

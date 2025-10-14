@@ -752,26 +752,7 @@ export default function SignatureGenerator() {
             </div>
           )}
 
-          {/* Informations sur le template */}
-          {templateInfo && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-2">📋 Template utilisé</h4>
-              <p className="text-sm text-blue-700">
-                Modèle ESPI avec {templateInfo.placeholders.length} champs personnalisables
-              </p>
-            </div>
-          )}
-
-          {/* Informations sur le pré-remplissage */}
-          {session?.user && (
-            <div className="mt-4 p-4 bg-green-50 rounded-lg">
-              <h4 className="font-medium text-green-800 mb-2">✨ Pré-remplissage automatique</h4>
-              <p className="text-sm text-green-700">
-                Vos informations de connexion Microsoft ont été utilisées pour pré-remplir automatiquement 
-                les champs Prénom, Nom et Email. Vous pouvez modifier ces valeurs si nécessaire.
-              </p>
-            </div>
-          )}
+          
         </div>
       )}
 
