@@ -9,6 +9,7 @@ export interface SignatureData {
   telephone: string;
   adresse: string;
   ville: string;
+  codePostal: string;
   email: string;
   siteWeb?: string;
   tagline?: string;
@@ -29,6 +30,7 @@ export class SignatureConverter {
       telephone,
       adresse,
       ville,
+      codePostal,
       email,
       siteWeb = "www.groupe-espi.fr",
       tagline = "FORMER À L'IMMOBILIER DE DEMAIN",
@@ -36,7 +38,11 @@ export class SignatureConverter {
     } = data;
 
     const fullName = `${prenom} ${nom}`;
-    const fullAddress = adresse ? `${adresse}, ${ville}` : ville;
+    const fullAddress = adresse && codePostal && ville 
+      ? `${adresse}, ${codePostal} ${ville}` 
+      : adresse && ville 
+        ? `${adresse}, ${ville}` 
+        : ville;
 
     return `
 <!DOCTYPE html>

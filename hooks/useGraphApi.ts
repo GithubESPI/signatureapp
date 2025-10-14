@@ -134,6 +134,22 @@ export function useGraphProfile() {
     setLoadingProfile(true);
     try {
       const userProfile = await client.getMe();
+      
+      // Récupérer la photo de profil si disponible
+      try {
+        const photoResponse = await client.axiosInstance.get('/me/photo/$value', {
+          responseType: 'blob'
+        });
+        if (photoResponse.data) {
+          // Créer une URL blob pour l'affichage
+          const photoUrl = URL.createObjectURL(photoResponse.data);
+          userProfile.photo = photoUrl;
+        }
+      } catch (photoError) {
+        console.log('Photo de profil non disponible:', photoError);
+        // La photo n'est pas disponible, on continue sans
+      }
+      
       setProfile(userProfile);
     } catch (err) {
       console.error('Erreur lors de la récupération du profil:', err);

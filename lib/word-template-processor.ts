@@ -8,6 +8,7 @@ export interface UserData {
   telephone: string;
   adresse: string;
   ville: string;
+  codePostal: string;
   email: string;
 }
 

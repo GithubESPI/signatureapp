@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       telephone: userData.telephone || '',
       adresse: userData.adresse || '',
       ville: userData.ville || '',
+      codePostal: userData.codePostal || '',
       email: userData.email || session.user.email || ''
     };
 

@@ -137,6 +137,10 @@ export default function GraphApiDemo() {
               <p className="text-sm text-gray-600">Département</p>
               <p className="font-medium">{profile.department || 'Non spécifié'}</p>
             </div>
+            <div>
+              <p className="text-sm text-gray-600">Téléphone mobile</p>
+              <p className="font-medium">{profile.mobilePhone || 'Non spécifié'}</p>
+            </div>
           </div>
         ) : (
           <div className="text-center py-4">

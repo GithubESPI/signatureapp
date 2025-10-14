@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useGraphProfile } from "@/hooks/useGraphApi";
 import { FileText, Download, Loader2, CheckCircle, XCircle, User, Phone, MapPin, Mail, Briefcase, Send } from "lucide-react";
 import OutlookSignatureManager from "./OutlookSignatureManager";
 import { SignatureConverter } from "@/lib/signature-converter";
@@ -13,6 +14,7 @@ interface UserData {
   telephone: string;
   adresse: string;
   ville: string;
+  codePostal: string;
   email: string;
 }
 
@@ -21,8 +23,21 @@ interface TemplateInfo {
   content: string;
 }
 
+const VILLES_OPTIONS = [
+  'Lyon',
+  'Paris', 
+  'Bordeaux',
+  'Levallois',
+  'Marseille',
+  'Montpellier',
+  'Nantes',
+  'Lille',
+  'Canada'
+];
+
 export default function SignatureGenerator() {
   const { data: session } = useSession();
+  const { profile, fetchProfile } = useGraphProfile();
   const [userData, setUserData] = useState<UserData>({
     prenom: '',
     nom: '',
@@ -30,6 +45,7 @@ export default function SignatureGenerator() {
     telephone: '',
     adresse: '',
     ville: '',
+    codePostal: '',
     email: ''
   });
   const [templateInfo, setTemplateInfo] = useState<TemplateInfo | null>(null);
@@ -44,7 +60,14 @@ export default function SignatureGenerator() {
     loadTemplateInfo();
   }, []);
 
-  // Pré-remplir avec les données de session
+  // Charger le profil utilisateur
+  useEffect(() => {
+    if (session?.user) {
+      fetchProfile();
+    }
+  }, [session, fetchProfile]);
+
+  // Pré-remplir avec les données de session et profil
   useEffect(() => {
     if (session?.user) {
       const nameParts = session.user.name?.split(' ') || [];
@@ -53,14 +76,14 @@ export default function SignatureGenerator() {
         prenom: nameParts[0] || '',
         nom: nameParts.slice(1).join(' ') || '',
         email: session.user.email || '',
-        // Pré-remplir avec des valeurs par défaut ESPI
-        fonction: 'Employé ESPI',
-        telephone: '',
+        // Pré-remplir avec les données du profil Microsoft Graph
+        fonction: profile?.jobTitle || 'Employé ESPI',
+        telephone: profile?.mobilePhone || '',
         adresse: '',
         ville: 'Paris'
       }));
     }
-  }, [session]);
+  }, [session, profile]);
 
   const loadTemplateInfo = async () => {
     setIsLoading(true);
@@ -178,7 +201,7 @@ export default function SignatureGenerator() {
                 type="text"
                 value={userData.prenom}
                 onChange={(e) => handleInputChange('prenom', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre prénom"
               />
             </div>
@@ -197,7 +220,7 @@ export default function SignatureGenerator() {
                 type="text"
                 value={userData.nom}
                 onChange={(e) => handleInputChange('nom', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre nom"
               />
             </div>
@@ -214,7 +237,7 @@ export default function SignatureGenerator() {
                 type="text"
                 value={userData.fonction}
                 onChange={(e) => handleInputChange('fonction', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre fonction"
               />
             </div>
@@ -228,7 +251,7 @@ export default function SignatureGenerator() {
                 type="tel"
                 value={userData.telephone}
                 onChange={(e) => handleInputChange('telephone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre téléphone"
               />
             </div>
@@ -242,26 +265,43 @@ export default function SignatureGenerator() {
                 type="text"
                 value={userData.adresse}
                 onChange={(e) => handleInputChange('adresse', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Votre adresse"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                placeholder="Votre adresse complète"
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
-                Ville
-                <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                  Pré-rempli
-                </span>
+                Code postal
               </label>
               <input
                 type="text"
+                value={userData.codePostal}
+                onChange={(e) => handleInputChange('codePostal', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                placeholder="Code postal"
+                maxLength={10}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MapPin className="w-4 h-4 inline mr-2" />
+                Ville d'appartenance
+              </label>
+              <select
                 value={userData.ville}
                 onChange={(e) => handleInputChange('ville', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Votre ville"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              >
+                <option value="">Sélectionnez votre ville</option>
+                {VILLES_OPTIONS.map((ville) => (
+                  <option key={ville} value={ville}>
+                    {ville}
+                  </option>
+                ))}
+              </select>
             </div>
             
             <div className="md:col-span-2">
@@ -278,7 +318,7 @@ export default function SignatureGenerator() {
                 type="email"
                 value={userData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre email"
               />
             </div>
