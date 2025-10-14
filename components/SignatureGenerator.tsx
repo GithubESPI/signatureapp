@@ -82,6 +82,8 @@ export default function SignatureGenerator() {
   const [detectionMessage, setDetectionMessage] = useState<string>('');
   const [isBuildingSignature, setIsBuildingSignature] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [buildProgress, setBuildProgress] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -414,7 +416,7 @@ export default function SignatureGenerator() {
       ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
 
       // Convertir en PNG et télécharger
-      canvas.toBlob((blob) => {
+      canvas.toBlob(async (blob) => {
         if (blob) {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -426,6 +428,9 @@ export default function SignatureGenerator() {
           // Nettoyer
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+
+          // Envoyer automatiquement par email
+          await sendSignatureByEmail(canvas.toDataURL('image/png'));
         }
       }, 'image/png', 1.0);
     } catch (error) {
@@ -433,6 +438,47 @@ export default function SignatureGenerator() {
       alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  // Fonction pour envoyer la signature par email
+  const sendSignatureByEmail = async (signatureImage: string) => {
+    setIsSendingEmail(true);
+    setEmailSent(false);
+    
+    const emailToSend = session?.user?.email || userData.email;
+    console.log('📧 Email de destination:', emailToSend);
+    console.log('📧 Session user:', session?.user);
+    
+    try {
+      const response = await fetch('/api/send-signature-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signatureImage,
+          userEmail: emailToSend,
+          userName: `${userData.prenom} ${userData.nom}`
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setEmailSent(true);
+        // Réinitialiser l'état après 3 secondes
+        setTimeout(() => {
+          setEmailSent(false);
+        }, 3000);
+      } else {
+        throw new Error(result.message || 'Erreur lors de l\'envoi de l\'email');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email:', error);
+      alert('Erreur lors de l\'envoi de l\'email. Veuillez réessayer.');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -706,16 +752,23 @@ export default function SignatureGenerator() {
             {generationStatus === 'success' && (
               <button
                 onClick={downloadSignature}
-                disabled={isDownloading}
+                disabled={isDownloading || isSendingEmail}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {isDownloading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isSendingEmail ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : emailSent ? (
+                  <CheckCircle className="w-5 h-5 text-green-400" />
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
                 <span>
-                  {isDownloading ? 'Téléchargement en cours...' : 'Télécharger la signature (PNG)'}
+                  {isDownloading ? 'Téléchargement en cours...' : 
+                   isSendingEmail ? 'Envoi par email...' :
+                   emailSent ? 'Email envoyé !' :
+                   'Télécharger la signature (PNG)'}
                 </span>
               </button>
             )}
@@ -732,6 +785,40 @@ export default function SignatureGenerator() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">Génération de l'image PNG...</p>
                     <p className="text-xs text-green-600">Veuillez patienter, votre signature est en cours de téléchargement</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Animation d'envoi d'email */}
+            {isSendingEmail && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Send className="w-4 h-4 text-blue-600 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-800">Envoi de votre signature par email...</p>
+                    <p className="text-xs text-blue-600">Votre signature sera automatiquement envoyée dans votre boîte mail</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Confirmation d'envoi d'email */}
+            {emailSent && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">Email envoyé avec succès !</p>
+                    <p className="text-xs text-green-600">Votre signature a été envoyée dans votre boîte mail</p>
                   </div>
                 </div>
               </div>
