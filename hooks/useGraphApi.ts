@@ -134,6 +134,9 @@ export function useGraphProfile() {
     setLoadingProfile(true);
     try {
       const userProfile = await client.getMe();
+      console.log('🔧 [Profile] Données récupérées:', userProfile);
+      console.log('🔧 [Profile] jobTitle:', userProfile.jobTitle);
+      console.log('🔧 [Profile] mobilePhone:', userProfile.mobilePhone);
       
       // Récupérer la photo de profil si disponible
       try {

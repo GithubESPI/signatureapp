@@ -27,7 +27,7 @@ export default function SignaturePreview({ userData, className = "" }: Signature
           </div>
 
           {/* Section droite - Informations utilisateur */}
-          <div className="flex flex-col justify-center text-right space-y-1">
+          <div className="flex flex-col justify-center text-left space-y-1">
             {/* Nom complet */}
             <div>
               <h2 
@@ -57,7 +57,7 @@ export default function SignaturePreview({ userData, className = "" }: Signature
                   className="text-sm text-white leading-tight"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                 >
-                  {userData.telephone}
+                  {userData.indicatifPays === 'FR' ? '+33' : '+1'} {userData.telephone}
                 </p>
               </div>
             )}

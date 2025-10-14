@@ -24,7 +24,7 @@ export interface GraphApiError {
 
 // Classe principale pour les appels Graph API
 export class GraphApiClient {
-  private axiosInstance: AxiosInstance;
+  public axiosInstance: AxiosInstance;
   private accessToken: string | null = null;
 
   constructor(baseURL: string = GRAPH_API_BASE_URL) {
@@ -74,7 +74,11 @@ export class GraphApiClient {
    */
   async getMe(): Promise<any> {
     try {
-      const response = await this.axiosInstance.get('/me');
+      const response = await this.axiosInstance.get('/me', {
+        params: {
+          $select: 'id,displayName,givenName,surname,mail,userPrincipalName,jobTitle,mobilePhone,officeLocation,department,companyName'
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error);

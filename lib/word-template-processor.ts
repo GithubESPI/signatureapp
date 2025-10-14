@@ -6,6 +6,7 @@ export interface UserData {
   nom: string;
   fonction: string;
   telephone: string;
+  indicatifPays: string;
   adresse: string;
   ville: string;
   codePostal: string;

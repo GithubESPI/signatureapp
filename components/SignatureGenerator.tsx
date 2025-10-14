@@ -13,6 +13,7 @@ interface UserData {
   nom: string;
   fonction: string;
   telephone: string;
+  indicatifPays: string;
   adresse: string;
   ville: string;
   codePostal: string;
@@ -36,6 +37,11 @@ const VILLES_OPTIONS = [
   'Canada'
 ];
 
+const INDICATIFS_PAYS = [
+  { code: 'FR', nom: 'France', indicatif: '+33' },
+  { code: 'CA', nom: 'Canada', indicatif: '+1' }
+];
+
 export default function SignatureGenerator() {
   const { data: session } = useSession();
   const { profile, fetchProfile } = useGraphProfile();
@@ -44,6 +50,7 @@ export default function SignatureGenerator() {
     nom: '',
     fonction: '',
     telephone: '',
+    indicatifPays: 'FR',
     adresse: '',
     ville: '',
     codePostal: '',
@@ -80,7 +87,7 @@ export default function SignatureGenerator() {
         nom: nameParts.slice(1).join(' ') || '',
         email: session.user?.email || '',
         // Pré-remplir avec les données du profil Microsoft Graph
-        fonction: profile?.jobTitle || 'Employé ESPI',
+        fonction: profile?.jobTitle || '',
         telephone: profile?.mobilePhone || '',
         adresse: '',
         ville: 'Paris'
@@ -112,7 +119,7 @@ export default function SignatureGenerator() {
   };
 
   const generatePreviewHtml = () => {
-    const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+    const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
     
     const fullName = `${prenom} ${nom}`;
     const fullAddress = [
@@ -218,7 +225,7 @@ export default function SignatureGenerator() {
       <div class="right-section">
         <div class="name">${fullName}</div>
         ${fonction ? `<div class="function">${fonction}</div>` : ''}
-        ${telephone ? `<div class="contact-info">${telephone}</div>` : ''}
+        ${telephone ? `<div class="contact-info">${indicatifPays === 'FR' ? '+33' : '+1'} ${telephone}</div>` : ''}
         ${fullAddress ? `<div class="contact-info">${fullAddress}</div>` : ''}
         ${email ? `<div class="contact-info">${email}</div>` : ''}
         <div class="website">www.groupe-espi.fr</div>
@@ -285,49 +292,51 @@ export default function SignatureGenerator() {
       // Logo ESPI retiré (section gauche vide)
 
       // Dessiner les informations utilisateur (droite) - exactement comme dans la prévisualisation
-      const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+      const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
       const fullName = `${prenom} ${nom}`;
       const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
 
-      ctx.textAlign = 'right';
+      ctx.textAlign = 'left';
       let yPosition = 30;
+      const leftMargin = 20;
 
       // Nom
       ctx.font = '600 18px Poppins, sans-serif';
-      ctx.fillText(fullName, width - 30, yPosition);
+      ctx.fillText(fullName, leftMargin, yPosition);
       yPosition += 22;
 
       // Fonction
       if (fonction) {
         ctx.font = '500 12px Poppins, sans-serif';
-        ctx.fillText(fonction, width - 30, yPosition);
+        ctx.fillText(fonction, leftMargin, yPosition);
         yPosition += 18;
       }
 
       // Téléphone
       if (telephone) {
         ctx.font = '400 12px Poppins, sans-serif';
-        ctx.fillText(telephone, width - 30, yPosition);
+        const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
+        ctx.fillText(`${indicatif} ${telephone}`, leftMargin, yPosition);
         yPosition += 18;
       }
 
       // Adresse
       if (fullAddress) {
         ctx.font = '400 12px Poppins, sans-serif';
-        ctx.fillText(fullAddress, width - 30, yPosition);
+        ctx.fillText(fullAddress, leftMargin, yPosition);
         yPosition += 18;
       }
 
       // Email
       if (email) {
         ctx.font = '400 12px Poppins, sans-serif';
-        ctx.fillText(email, width - 30, yPosition);
+        ctx.fillText(email, leftMargin, yPosition);
         yPosition += 18;
       }
 
       // Site web
       ctx.font = '400 12px Poppins, sans-serif';
-      ctx.fillText('www.groupe-espi.fr', width - 30, yPosition);
+      ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
 
       // Convertir en PNG et télécharger
       canvas.toBlob((blob) => {
@@ -437,6 +446,24 @@ export default function SignatureGenerator() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                 placeholder="Votre fonction"
               />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Phone className="w-4 h-4 inline mr-2" />
+                Indicatif pays
+              </label>
+              <select
+                value={userData.indicatifPays}
+                onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              >
+                {INDICATIFS_PAYS.map((pays) => (
+                  <option key={pays.code} value={pays.code}>
+                    {pays.nom} ({pays.indicatif})
+                  </option>
+                ))}
+              </select>
             </div>
             
             <div>
