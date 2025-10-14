@@ -15,12 +15,12 @@ export default function SignaturePreview({ userData, className = "" }: Signature
         className="relative w-full h-auto bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/images/model-signature.png')",
-          minHeight: "180px",
-          aspectRatio: "3/1"
+          minHeight: "210px",
+          aspectRatio: "4/1"
         }}
       >
         {/* Overlay pour le contenu */}
-        <div className="absolute inset-0 flex justify-between items-center px-12 py-8">
+        <div className="absolute inset-0 flex justify-between items-center px-8 py-8">
           {/* Section gauche - Vide (logo ESPI retiré) */}
           <div className="flex flex-col justify-center">
             {/* Logo ESPI retiré */}

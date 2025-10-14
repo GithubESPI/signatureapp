@@ -14,6 +14,7 @@ interface UserData {
   fonction: string;
   telephone: string;
   indicatifPays: string;
+  adresseId: string;
   adresse: string;
   ville: string;
   codePostal: string;
@@ -42,6 +43,20 @@ const INDICATIFS_PAYS = [
   { code: 'CA', nom: 'Canada', indicatif: '+1' }
 ];
 
+// Base de données des adresses avec villes et codes postaux correspondants
+const ADRESSES_REFERENCE = [
+  { id: "levallois", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
+  { id: "nantes", adresse: "285 Rue Louis de Broglie", ville: "Nantes", codePostal: "44300", pays: "FR" },
+  { id: "marseille-docks", adresse: "Les Docks Village", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
+  { id: "marseille-lazaret", adresse: "20 quai du Lazaret", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
+  { id: "bordeaux", adresse: "73 Av. Thiers", ville: "Bordeaux", codePostal: "33100", pays: "FR" },
+  { id: "lyon", adresse: "95 Rue Marietton", ville: "Lyon", codePostal: "69009", pays: "FR" },
+  { id: "montpellier", adresse: "53 avenue Georges Clémenceau", ville: "Montpellier", codePostal: "34000", pays: "FR" },
+  { id: "lille", adresse: "8 Rue de Tournai", ville: "Lille", codePostal: "59800", pays: "FR" },
+  { id: "montreal", adresse: "507 Place d'Armes local 260", ville: "Montréal", codePostal: "H2Y 2W8", pays: "CA" },
+  { id: "aix", adresse: "10 cours Sextius", ville: "Aix-en-Provence", codePostal: "13800", pays: "FR" }
+];
+
 export default function SignatureGenerator() {
   const { data: session } = useSession();
   const { profile, fetchProfile } = useGraphProfile();
@@ -51,6 +66,7 @@ export default function SignatureGenerator() {
     fonction: '',
     telephone: '',
     indicatifPays: 'FR',
+    adresseId: '',
     adresse: '',
     ville: '',
     codePostal: '',
@@ -63,6 +79,10 @@ export default function SignatureGenerator() {
   const [signatureHtml, setSignatureHtml] = useState<string>('');
   const [showOutlookManager, setShowOutlookManager] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [detectionMessage, setDetectionMessage] = useState<string>('');
+  const [isBuildingSignature, setIsBuildingSignature] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [buildProgress, setBuildProgress] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Charger les informations du template au montage
@@ -116,7 +136,25 @@ export default function SignatureGenerator() {
       ...prev,
       [field]: value
     }));
+
+    // Gestion automatique de la sélection d'adresse
+    if (field === 'adresseId' && value) {
+      const adresseSelectionnee = ADRESSES_REFERENCE.find(addr => addr.id === value);
+      if (adresseSelectionnee) {
+        setUserData(prev => ({
+          ...prev,
+          adresse: adresseSelectionnee.adresse,
+          ville: adresseSelectionnee.ville,
+          codePostal: adresseSelectionnee.codePostal,
+          indicatifPays: adresseSelectionnee.pays
+        }));
+        setDetectionMessage(`✅ Adresse sélectionnée: ${adresseSelectionnee.ville} (${adresseSelectionnee.codePostal})`);
+        // Effacer le message après 3 secondes
+        setTimeout(() => setDetectionMessage(''), 3000);
+      }
+    }
   };
+
 
   const generatePreviewHtml = () => {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
@@ -238,9 +276,25 @@ export default function SignatureGenerator() {
 
   const generateSignature = async () => {
     setIsGenerating(true);
+    setIsBuildingSignature(true);
     setGenerationStatus('idle');
+    setBuildProgress(0);
     
     try {
+      // Animation de construction de la signature
+      const buildSteps = [
+        { progress: 20, message: "Préparation des données..." },
+        { progress: 40, message: "Construction du design..." },
+        { progress: 60, message: "Application des styles..." },
+        { progress: 80, message: "Finalisation de la signature..." },
+        { progress: 100, message: "Signature prête !" }
+      ];
+
+      for (const step of buildSteps) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setBuildProgress(step.progress);
+      }
+
       // Générer la signature HTML basée sur la prévisualisation
       const signatureHtml = generatePreviewHtml();
       setSignatureHtml(signatureHtml);
@@ -252,10 +306,12 @@ export default function SignatureGenerator() {
       setGenerationStatus('error');
     } finally {
       setIsGenerating(false);
+      setIsBuildingSignature(false);
     }
   };
 
   const downloadSignature = async () => {
+    setIsDownloading(true);
     try {
       // Créer un canvas pour dessiner la signature
       const canvas = document.createElement('canvas');
@@ -264,9 +320,9 @@ export default function SignatureGenerator() {
         throw new Error('Impossible de créer le contexte canvas');
       }
 
-      // Dimensions de la signature (plus étroite)
-      const width = 600;
-      const height = 150;
+      // Dimensions de la signature (identiques à la prévisualisation)
+      const width = 800;
+      const height = 210; // Hauteur ajustée pour correspondre à la prévisualisation
       canvas.width = width * 2; // Haute qualité
       canvas.height = height * 2;
       ctx.scale(2, 2); // Mise à l'échelle pour la haute qualité
@@ -281,61 +337,80 @@ export default function SignatureGenerator() {
         backgroundImage.src = '/images/model-signature.png';
       });
 
-      // Dessiner l'image de fond (sans étirement)
-      ctx.drawImage(backgroundImage, 0, 0, width, height);
+      // Dessiner l'image de fond en préservant les proportions
+      const imageAspectRatio = backgroundImage.naturalWidth / backgroundImage.naturalHeight;
+      const canvasAspectRatio = width / height;
+      
+      let drawWidth, drawHeight, drawX, drawY;
+      
+      if (imageAspectRatio > canvasAspectRatio) {
+        // L'image est plus large que le canvas, ajuster par la hauteur
+        drawHeight = height;
+        drawWidth = height * imageAspectRatio;
+        drawX = (width - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        // L'image est plus haute que le canvas, ajuster par la largeur
+        drawWidth = width;
+        drawHeight = width / imageAspectRatio;
+        drawX = 0;
+        drawY = (height - drawHeight) / 2;
+      }
+      
+      ctx.drawImage(backgroundImage, drawX, drawY, drawWidth, drawHeight);
 
       // Configuration de la police
       ctx.fillStyle = 'white';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
 
-      // Logo ESPI retiré (section gauche vide)
 
       // Dessiner les informations utilisateur (droite) - exactement comme dans la prévisualisation
       const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
       const fullName = `${prenom} ${nom}`;
       const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
 
+      // Positionnement identique à la prévisualisation (section droite)
       ctx.textAlign = 'left';
-      let yPosition = 30;
-      const leftMargin = 20;
+      let yPosition = 50; // Position comme dans la prévisualisation
+      const leftMargin = 450; // Position ajustée pour la section droite
 
-      // Nom
-      ctx.font = '600 18px Poppins, sans-serif';
+      // Nom (text-xl font-semibold) - comme dans la prévisualisation
+      ctx.font = '600 20px Poppins, sans-serif';
       ctx.fillText(fullName, leftMargin, yPosition);
-      yPosition += 22;
+      yPosition += 25; // Espacement comme dans la prévisualisation
 
-      // Fonction
+      // Fonction (text-sm font-medium) - comme dans la prévisualisation
       if (fonction) {
-        ctx.font = '500 12px Poppins, sans-serif';
+        ctx.font = '500 14px Poppins, sans-serif';
         ctx.fillText(fonction, leftMargin, yPosition);
-        yPosition += 18;
+        yPosition += 20; // Espacement comme dans la prévisualisation
       }
 
-      // Téléphone
+      // Téléphone (text-sm) - comme dans la prévisualisation
       if (telephone) {
-        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.font = '400 14px Poppins, sans-serif';
         const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
         ctx.fillText(`${indicatif} ${telephone}`, leftMargin, yPosition);
-        yPosition += 18;
+        yPosition += 20; // Espacement comme dans la prévisualisation
       }
 
-      // Adresse
+      // Adresse (text-sm) - comme dans la prévisualisation
       if (fullAddress) {
-        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.font = '400 14px Poppins, sans-serif';
         ctx.fillText(fullAddress, leftMargin, yPosition);
-        yPosition += 18;
+        yPosition += 20; // Espacement comme dans la prévisualisation
       }
 
-      // Email
+      // Email (text-sm) - comme dans la prévisualisation
       if (email) {
-        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.font = '400 14px Poppins, sans-serif';
         ctx.fillText(email, leftMargin, yPosition);
-        yPosition += 18;
+        yPosition += 20; // Espacement comme dans la prévisualisation
       }
 
-      // Site web
-      ctx.font = '400 12px Poppins, sans-serif';
+      // Site web (text-sm) - comme dans la prévisualisation
+      ctx.font = '400 14px Poppins, sans-serif';
       ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
 
       // Convertir en PNG et télécharger
@@ -356,6 +431,8 @@ export default function SignatureGenerator() {
     } catch (error) {
       console.error('Erreur lors de la génération PNG:', error);
       alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -483,49 +560,68 @@ export default function SignatureGenerator() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
-                Adresse
+                Adresse de l'entreprise
+              </label>
+              <select
+                value={userData.adresseId}
+                onChange={(e) => handleInputChange('adresseId', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              >
+                <option value="">Sélectionnez votre adresse</option>
+                {ADRESSES_REFERENCE.map((adresse) => (
+                  <option key={adresse.id} value={adresse.id}>
+                    {adresse.adresse} - {adresse.ville} ({adresse.codePostal})
+                  </option>
+                ))}
+              </select>
+              {detectionMessage && (
+                <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">
+                  {detectionMessage}
+                </div>
+              )}
+            </div>
+            
+            {/* Champs automatiquement remplis - en lecture seule */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MapPin className="w-4 h-4 inline mr-2" />
+                Adresse (automatique)
               </label>
               <input
                 type="text"
                 value={userData.adresse}
-                onChange={(e) => handleInputChange('adresse', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder="Votre adresse complète"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                placeholder="Sélectionnez une adresse ci-dessus"
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
-                Code postal
+                Code postal (automatique)
               </label>
               <input
                 type="text"
                 value={userData.codePostal}
-                onChange={(e) => handleInputChange('codePostal', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder="Code postal"
-                maxLength={10}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                placeholder="Sélectionnez une adresse ci-dessus"
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
-                Ville d'appartenance
+                Ville d'appartenance (automatique)
               </label>
-              <select
+              <input
+                type="text"
                 value={userData.ville}
-                onChange={(e) => handleInputChange('ville', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              >
-                <option value="">Sélectionnez votre ville</option>
-                {VILLES_OPTIONS.map((ville) => (
-                  <option key={ville} value={ville}>
-                    {ville}
-                  </option>
-                ))}
-              </select>
+                readOnly
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                placeholder="Sélectionnez une adresse ci-dessus"
+              />
             </div>
             
             <div className="md:col-span-2">
@@ -558,6 +654,37 @@ export default function SignatureGenerator() {
               <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la signature'}</span>
             </button>
             
+            {/* Animation de construction de la signature */}
+            {isBuildingSignature && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">Construction de votre signature</h3>
+                    <div className="w-full bg-blue-200 rounded-full h-3 mb-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${buildProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      {buildProgress < 20 && "Préparation des données..."}
+                      {buildProgress >= 20 && buildProgress < 40 && "Construction du design..."}
+                      {buildProgress >= 40 && buildProgress < 60 && "Application des styles..."}
+                      {buildProgress >= 60 && buildProgress < 80 && "Finalisation de la signature..."}
+                      {buildProgress >= 80 && buildProgress < 100 && "Finalisation de la signature..."}
+                      {buildProgress === 100 && "Signature prête !"}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">{buildProgress}% terminé</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={generateSignature}
               disabled={isGenerating || !userData.prenom || !userData.nom}
@@ -579,11 +706,35 @@ export default function SignatureGenerator() {
             {generationStatus === 'success' && (
               <button
                 onClick={downloadSignature}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                disabled={isDownloading}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                <Save className="w-5 h-5" />
-                <span>Télécharger la signature (PNG)</span>
+                {isDownloading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                <span>
+                  {isDownloading ? 'Téléchargement en cours...' : 'Télécharger la signature (PNG)'}
+                </span>
               </button>
+            )}
+
+            {/* Animation de téléchargement */}
+            {isDownloading && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">Génération de l'image PNG...</p>
+                    <p className="text-xs text-green-600">Veuillez patienter, votre signature est en cours de téléchargement</p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 

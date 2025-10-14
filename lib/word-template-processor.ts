@@ -7,6 +7,7 @@ export interface UserData {
   fonction: string;
   telephone: string;
   indicatifPays: string;
+  adresseId: string;
   adresse: string;
   ville: string;
   codePostal: string;
