@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useGraphProfile } from "@/hooks/useGraphApi";
-import { FileText, Download, Loader2, CheckCircle, XCircle, User, Phone, MapPin, Mail, Briefcase, Send } from "lucide-react";
+import { FileText, Download, Loader2, CheckCircle, XCircle, User, Phone, MapPin, Mail, Briefcase, Send, Eye, Save } from "lucide-react";
 import OutlookSignatureManager from "./OutlookSignatureManager";
+import SignaturePreview from "./SignaturePreview";
 import { SignatureConverter } from "@/lib/signature-converter";
 
 interface UserData {
@@ -54,6 +55,8 @@ export default function SignatureGenerator() {
   const [generationStatus, setGenerationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [signatureHtml, setSignatureHtml] = useState<string>('');
   const [showOutlookManager, setShowOutlookManager] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // Charger les informations du template au montage
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function SignatureGenerator() {
         ...prev,
         prenom: nameParts[0] || '',
         nom: nameParts.slice(1).join(' ') || '',
-        email: session.user.email || '',
+        email: session.user?.email || '',
         // Pré-remplir avec les données du profil Microsoft Graph
         fonction: profile?.jobTitle || 'Employé ESPI',
         telephone: profile?.mobilePhone || '',
@@ -108,48 +111,242 @@ export default function SignatureGenerator() {
     }));
   };
 
+  const generatePreviewHtml = () => {
+    const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+    
+    const fullName = `${prenom} ${nom}`;
+    const fullAddress = [
+      adresse,
+      codePostal,
+      ville
+    ].filter(Boolean).join(', ');
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Signature ESPI</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    .signature-container {
+      font-family: 'Poppins', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .signature-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .left-section {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      margin-bottom: 12px;
+    }
+    
+    .tagline {
+      font-size: 0.875rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      line-height: 1.2;
+    }
+    
+    .right-section {
+      display: flex;
+      flex-direction: column;
+      text-align: right;
+      gap: 4px;
+    }
+    
+    .name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    
+    .function {
+      font-size: 0.875rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    
+    .contact-info {
+      font-size: 0.875rem;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+    
+    .website {
+      font-size: 0.875rem;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <div class="signature-container">
+    <div class="signature-content">
+      <!-- Section gauche - Logo et tagline -->
+      <div class="left-section">
+        <div class="logo">ESPI</div>
+        <div class="tagline">
+          <div>FORMER</div>
+          <div>À L'IMMOBILIER</div>
+          <div>DE DEMAIN</div>
+        </div>
+      </div>
+      
+      <!-- Section droite - Informations utilisateur -->
+      <div class="right-section">
+        <div class="name">${fullName}</div>
+        ${fonction ? `<div class="function">${fonction}</div>` : ''}
+        ${telephone ? `<div class="contact-info">${telephone}</div>` : ''}
+        ${fullAddress ? `<div class="contact-info">${fullAddress}</div>` : ''}
+        ${email ? `<div class="contact-info">${email}</div>` : ''}
+        <div class="website">www.groupe-espi.fr</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  };
+
   const generateSignature = async () => {
     setIsGenerating(true);
     setGenerationStatus('idle');
     
     try {
-      const response = await fetch('/api/generate-signature', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          templateName: 'model_signature.docx',
-          userData
-        })
-      });
-
-      if (response.ok) {
-        // Télécharger le fichier généré
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `signature-${userData.prenom}-${userData.nom}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        // Générer la signature HTML pour Outlook
-        const signatureHtml = SignatureConverter.convertToHtml(userData);
-        setSignatureHtml(signatureHtml);
-        setShowOutlookManager(true);
-        
-        setGenerationStatus('success');
-      } else {
-        throw new Error('Erreur lors de la génération');
-      }
+      // Générer la signature HTML basée sur la prévisualisation
+      const signatureHtml = generatePreviewHtml();
+      setSignatureHtml(signatureHtml);
+      setShowOutlookManager(true);
+      
+      setGenerationStatus('success');
     } catch (error) {
       console.error("Erreur lors de la génération:", error);
       setGenerationStatus('error');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const downloadSignature = async () => {
+    try {
+      // Créer un canvas pour dessiner la signature
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Impossible de créer le contexte canvas');
+      }
+
+      // Dimensions de la signature (plus étroite)
+      const width = 600;
+      const height = 150;
+      canvas.width = width * 2; // Haute qualité
+      canvas.height = height * 2;
+      ctx.scale(2, 2); // Mise à l'échelle pour la haute qualité
+
+      // Charger l'image modèle
+      const backgroundImage = new Image();
+      backgroundImage.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        backgroundImage.onload = resolve;
+        backgroundImage.onerror = reject;
+        backgroundImage.src = '/images/model-signature.png';
+      });
+
+      // Dessiner l'image de fond (sans étirement)
+      ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+      // Configuration de la police
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      // Logo ESPI retiré (section gauche vide)
+
+      // Dessiner les informations utilisateur (droite) - exactement comme dans la prévisualisation
+      const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+      const fullName = `${prenom} ${nom}`;
+      const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
+
+      ctx.textAlign = 'right';
+      let yPosition = 30;
+
+      // Nom
+      ctx.font = '600 18px Poppins, sans-serif';
+      ctx.fillText(fullName, width - 30, yPosition);
+      yPosition += 22;
+
+      // Fonction
+      if (fonction) {
+        ctx.font = '500 12px Poppins, sans-serif';
+        ctx.fillText(fonction, width - 30, yPosition);
+        yPosition += 18;
+      }
+
+      // Téléphone
+      if (telephone) {
+        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.fillText(telephone, width - 30, yPosition);
+        yPosition += 18;
+      }
+
+      // Adresse
+      if (fullAddress) {
+        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.fillText(fullAddress, width - 30, yPosition);
+        yPosition += 18;
+      }
+
+      // Email
+      if (email) {
+        ctx.font = '400 12px Poppins, sans-serif';
+        ctx.fillText(email, width - 30, yPosition);
+        yPosition += 18;
+      }
+
+      // Site web
+      ctx.font = '400 12px Poppins, sans-serif';
+      ctx.fillText('www.groupe-espi.fr', width - 30, yPosition);
+
+      // Convertir en PNG et télécharger
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `signature-${userData.prenom}-${userData.nom}.png`;
+          document.body.appendChild(a);
+          a.click();
+          
+          // Nettoyer
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Erreur lors de la génération PNG:', error);
+      alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
     }
   };
 
@@ -324,8 +521,16 @@ export default function SignatureGenerator() {
             </div>
           </div>
 
-          {/* Bouton de génération */}
-          <div className="flex justify-center">
+          {/* Boutons d'action */}
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center space-x-2"
+            >
+              <Eye className="w-5 h-5" />
+              <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la signature'}</span>
+            </button>
+            
             <button
               onClick={generateSignature}
               disabled={isGenerating || !userData.prenom || !userData.nom}
@@ -343,7 +548,31 @@ export default function SignatureGenerator() {
                  'Générer ma signature'}
               </span>
             </button>
+
+            {generationStatus === 'success' && (
+              <button
+                onClick={downloadSignature}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+              >
+                <Save className="w-5 h-5" />
+                <span>Télécharger la signature (PNG)</span>
+              </button>
+            )}
           </div>
+
+          {/* Zone de prévisualisation */}
+          {showPreview && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                Aperçu de votre signature
+              </h3>
+              <div className="flex justify-center">
+                <div className="max-w-2xl w-full" ref={previewRef}>
+                  <SignaturePreview userData={userData} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Informations sur le template */}
           {templateInfo && (

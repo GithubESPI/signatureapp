@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Mail, Send, CheckCircle, XCircle, Loader2, Settings } from "lucide-react";
+import { Mail, Send, CheckCircle, XCircle, Loader2, Settings, Download } from "lucide-react";
 
 interface OutlookSignatureManagerProps {
   signatureHtml?: string;
@@ -132,6 +132,104 @@ export default function OutlookSignatureManager({
     }
   };
 
+  const downloadSignature = async () => {
+    if (!generatedSignature && !signatureHtml) {
+      alert('Aucune signature à télécharger');
+      return;
+    }
+
+    try {
+      // Créer un élément de prévisualisation temporaire
+      const previewContainer = document.createElement('div');
+      previewContainer.style.position = 'fixed';
+      previewContainer.style.left = '0';
+      previewContainer.style.top = '0';
+      previewContainer.style.width = '800px';
+      previewContainer.style.height = '200px';
+      previewContainer.style.zIndex = '9999';
+      previewContainer.style.backgroundColor = '#2c5aa0';
+      previewContainer.style.borderRadius = '8px';
+      previewContainer.style.padding = '20px';
+      previewContainer.style.fontFamily = 'Poppins, sans-serif';
+      previewContainer.style.color = 'white';
+      previewContainer.style.display = 'flex';
+      previewContainer.style.justifyContent = 'space-between';
+      previewContainer.style.alignItems = 'center';
+      
+      // Extraire les données de la signature HTML
+      const htmlContent = generatedSignature || signatureHtml || '';
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      
+      // Extraire les informations du DOM
+      const nameElement = tempDiv.querySelector('.name');
+      const functionElement = tempDiv.querySelector('.function');
+      const contactElements = tempDiv.querySelectorAll('.contact-info');
+      const websiteElement = tempDiv.querySelector('.website');
+      
+      const fullName = nameElement?.textContent || 'Nom Utilisateur';
+      const functionText = functionElement?.textContent || '';
+      const contactInfo = Array.from(contactElements).map(el => el.textContent).filter(Boolean);
+      const website = websiteElement?.textContent || 'www.groupe-espi.fr';
+      
+      previewContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column;">
+          <div style="font-size: 2.5rem; font-weight: 300; letter-spacing: 0.2em; margin-bottom: 12px;">ESPI</div>
+          <div style="font-size: 0.875rem; font-weight: 300; letter-spacing: 0.1em; line-height: 1.2;">
+            <div>FORMER</div>
+            <div>À L'IMMOBILIER</div>
+            <div>DE DEMAIN</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; text-align: right; gap: 4px;">
+          <div style="font-size: 1.25rem; font-weight: 600; line-height: 1.2;">${fullName}</div>
+          ${functionText ? `<div style="font-size: 0.875rem; font-weight: 500; line-height: 1.2;">${functionText}</div>` : ''}
+          ${contactInfo.map(info => `<div style="font-size: 0.875rem; font-weight: 400; line-height: 1.2;">${info}</div>`).join('')}
+          <div style="font-size: 0.875rem; font-weight: 400; line-height: 1.2;">${website}</div>
+        </div>
+      `;
+      
+      document.body.appendChild(previewContainer);
+
+      // Attendre que l'élément soit rendu
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Utiliser html2canvas pour convertir en PNG
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(previewContainer, {
+        backgroundColor: '#2c5aa0',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: 800,
+        height: 200,
+        logging: false
+      });
+
+      // Convertir en PNG
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `signature-espi.png`;
+          document.body.appendChild(a);
+          a.click();
+          
+          // Nettoyer
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+        
+        // Nettoyer l'élément temporaire
+        document.body.removeChild(previewContainer);
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Erreur lors de la génération PNG:', error);
+      alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
@@ -206,6 +304,17 @@ export default function OutlookSignatureManager({
             <div className="p-3 bg-green-100 text-green-700 rounded-lg flex items-center space-x-2">
               <CheckCircle className="w-5 h-5" />
               <span>Signature HTML générée avec succès !</span>
+            </div>
+
+            {/* Bouton de téléchargement */}
+            <div className="flex justify-center">
+              <button
+                onClick={downloadSignature}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+              >
+                <Download className="w-5 h-5" />
+                <span>Télécharger la signature (PNG)</span>
+              </button>
             </div>
 
             {/* Instructions */}
