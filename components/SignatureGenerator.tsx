@@ -46,6 +46,7 @@ const INDICATIFS_PAYS = [
 // Base de données des adresses avec villes et codes postaux correspondants
 const ADRESSES_REFERENCE = [
   { id: "levallois", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
+  { id: "paris", adresse: "23 rue Cronstadt", ville: "PARIS", codePostal: "75015", pays: "FR" },
   { id: "nantes", adresse: "285 Rue Louis de Broglie", ville: "Nantes", codePostal: "44300", pays: "FR" },
   { id: "marseille-docks", adresse: "Les Docks Village", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
   { id: "marseille-lazaret", adresse: "20 quai du Lazaret", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
@@ -161,6 +162,13 @@ export default function SignatureGenerator() {
   const generatePreviewHtml = () => {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
     
+    // Débogage du format téléphone pour la prévisualisation
+    if (telephone) {
+      const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
+      const phoneDisplay = `(${indicatifPays === 'FR' ? '+33' : '+1'}) ${cleanPhone}`;
+      console.log('📞 Format téléphone Preview:', phoneDisplay, 'Original:', telephone);
+    }
+    
     const fullName = `${prenom} ${nom}`;
     const fullAddress = [
       adresse,
@@ -265,7 +273,7 @@ export default function SignatureGenerator() {
       <div class="right-section">
         <div class="name">${fullName}</div>
         ${fonction ? `<div class="function">${fonction}</div>` : ''}
-        ${telephone ? `<div class="contact-info">${indicatifPays === 'FR' ? '+33' : '+1'} ${telephone}</div>` : ''}
+        ${telephone ? `<div class="contact-info">(${indicatifPays === 'FR' ? '+33' : '+1'}) ${telephone.startsWith('0') ? telephone.substring(1) : telephone}</div>` : ''} <!-- Format téléphone corrigé v3 -->
         ${fullAddress ? `<div class="contact-info">${fullAddress}</div>` : ''}
         ${email ? `<div class="contact-info">${email}</div>` : ''}
         <div class="website">www.groupe-espi.fr</div>
@@ -322,9 +330,9 @@ export default function SignatureGenerator() {
         throw new Error('Impossible de créer le contexte canvas');
       }
 
-      // Dimensions de la signature (identiques à la prévisualisation)
-      const width = 800;
-      const height = 210; // Hauteur ajustée pour correspondre à la prévisualisation
+      // Dimensions de la signature améliorées pour plus d'aération
+      const width = 1000; // Augmenté de 800 à 1000
+      const height = 280; // Augmenté de 210 à 280
       canvas.width = width * 2; // Haute qualité
       canvas.height = height * 2;
       ctx.scale(2, 2); // Mise à l'échelle pour la haute qualité
@@ -366,54 +374,63 @@ export default function SignatureGenerator() {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
 
+      // Section gauche avec logo ESPI et tagline - aérée avec padding
+      
+      
+      
 
       // Dessiner les informations utilisateur (droite) - exactement comme dans la prévisualisation
       const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
       const fullName = `${prenom} ${nom}`;
       const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
 
-      // Positionnement identique à la prévisualisation (section droite)
+      // Positionnement aligné avec la section gauche (section droite)
       ctx.textAlign = 'left';
-      let yPosition = 50; // Position comme dans la prévisualisation
-      const leftMargin = 450; // Position ajustée pour la section droite
+      let yPosition = 80; // Élevé verticalement pour un meilleur alignement
+      const leftMargin = 550; // Position ajustée pour la nouvelle largeur
 
-      // Nom (text-xl font-semibold) - comme dans la prévisualisation
-      ctx.font = '600 20px Poppins, sans-serif';
+      // Nom (text-xl font-semibold) - taille augmentée
+      ctx.font = '600 24px Poppins, sans-serif';
       ctx.fillText(fullName, leftMargin, yPosition);
-      yPosition += 25; // Espacement comme dans la prévisualisation
+      yPosition += 35; // Espacement augmenté
 
-      // Fonction (text-sm font-medium) - comme dans la prévisualisation
+      // Fonction (text-sm font-medium) - taille augmentée
       if (fonction) {
-        ctx.font = '500 14px Poppins, sans-serif';
+        ctx.font = '500 16px Poppins, sans-serif';
         ctx.fillText(fonction, leftMargin, yPosition);
-        yPosition += 20; // Espacement comme dans la prévisualisation
+        yPosition += 25; // Espacement augmenté
       }
 
-      // Téléphone (text-sm) - comme dans la prévisualisation
+      // Téléphone (text-sm) - taille augmentée avec indicatif entre parenthèses
       if (telephone) {
-        ctx.font = '400 14px Poppins, sans-serif';
+        ctx.font = '400 16px Poppins, sans-serif';
+        // Retirer le 0 au début du téléphone et mettre l'indicatif entre parenthèses
+        const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
         const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
-        ctx.fillText(`${indicatif} ${telephone}`, leftMargin, yPosition);
-        yPosition += 20; // Espacement comme dans la prévisualisation
+        const phoneDisplay = `(${indicatif}) ${cleanPhone}`;
+        console.log('📞 Format téléphone PNG:', phoneDisplay, 'Original:', telephone);
+        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone corrigé
+        yPosition += 25; // Espacement augmenté
       }
 
-      // Adresse (text-sm) - comme dans la prévisualisation
+      // Adresse (text-sm) - taille augmentée
       if (fullAddress) {
-        ctx.font = '400 14px Poppins, sans-serif';
+        ctx.font = '400 16px Poppins, sans-serif';
         ctx.fillText(fullAddress, leftMargin, yPosition);
-        yPosition += 20; // Espacement comme dans la prévisualisation
+        yPosition += 25; // Espacement augmenté
       }
 
-      // Email (text-sm) - comme dans la prévisualisation
+      // Email (text-sm) - taille augmentée
       if (email) {
-        ctx.font = '400 14px Poppins, sans-serif';
+        ctx.font = '400 16px Poppins, sans-serif';
         ctx.fillText(email, leftMargin, yPosition);
-        yPosition += 20; // Espacement comme dans la prévisualisation
+        yPosition += 25; // Espacement augmenté
       }
 
-      // Site web (text-sm) - comme dans la prévisualisation
-      ctx.font = '400 14px Poppins, sans-serif';
+      // Site web (text-sm) - taille augmentée
+      ctx.font = '400 16px Poppins, sans-serif';
       ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
+      yPosition += 30; // Marge inférieure normale pour la section droite
 
       // Convertir en PNG et télécharger
       canvas.toBlob(async (blob) => {
