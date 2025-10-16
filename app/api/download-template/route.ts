@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
     console.log("✅ [Download Template] Fichier téléchargé avec succès");
     console.log("📁 [Download Template] Taille du fichier:", fileBuffer.length, "bytes");
     
-    return new NextResponse(fileBuffer, {
+    // Convertir le Buffer en ArrayBuffer pour NextResponse
+    const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength) as ArrayBuffer;
+    
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename="${fileName}"`,
