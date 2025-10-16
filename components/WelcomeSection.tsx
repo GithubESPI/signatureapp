@@ -44,7 +44,7 @@ export default function WelcomeSection() {
               <h1 className="text-2xl font-bold text-gray-900">SignatureApp</h1>
             </div>
             <div className="text-sm text-gray-600">
-              Powered by Microsoft Azure
+              Powered by Groupe ESPI
             </div>
           </div>
         </div>
@@ -84,7 +84,10 @@ export default function WelcomeSection() {
               >
                 Commencer maintenant
               </button>
-              <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all duration-300">
+              <button 
+                onClick={() => window.location.href = '/tutorial'}
+                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+              >
                 En savoir plus
               </button>
             </motion.div>
@@ -158,14 +161,14 @@ export default function WelcomeSection() {
               <span className="text-xl font-bold">SignatureApp</span>
             </div>
             <p className="text-gray-400 mb-4">
-              Solution de génération de signatures powered by Microsoft Azure
+              Solution de génération de signatures powered by Groupe ESPI
             </p>
             <div className="flex justify-center space-x-6 text-sm text-gray-400">
-              <span>© 2024 SignatureApp</span>
+              <span>© {new Date().getFullYear()} propulsé par <a href="https://groupe-espi.fr/" className="text-white hover:text-gray-200">Groupe ESPi</a></span>
               <span>•</span>
-              <span>Microsoft Azure</span>
+              <span>Groupe ESPi</span>
               <span>•</span>
-              <span>Next.js</span>
+              <span>Groupe ESPi</span>
             </div>
           </div>
         </div>
