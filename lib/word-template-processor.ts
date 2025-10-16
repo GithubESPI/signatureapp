@@ -61,7 +61,7 @@ export class WordTemplateProcessor {
       });
       
       console.log("✅ [TemplateProcessor] Document généré avec succès");
-      return report;
+      return Buffer.from(report);
       
     } catch (error) {
       console.error("❌ [TemplateProcessor] Erreur lors de la génération:", error);
