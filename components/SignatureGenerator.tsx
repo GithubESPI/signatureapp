@@ -860,17 +860,7 @@ export default function SignatureGenerator() {
         </div>
       )}
 
-      {/* Gestionnaire de signature Outlook */}
-      {showOutlookManager && signatureHtml && (
-        <div className="mt-8">
-          <OutlookSignatureManager 
-            signatureHtml={signatureHtml}
-            onSignatureSent={() => {
-              console.log("Signature envoyée vers Outlook");
-            }}
-          />
-        </div>
-      )}
+      
     </div>
   );
 }
