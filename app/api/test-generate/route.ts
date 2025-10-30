@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
       nom: userData.nom || 'User',
       fonction: userData.fonction || 'Employé ESPI',
       telephone: userData.telephone || '',
+      indicatifPays: userData.indicatifPays || '',
+      adresseId: userData.adresseId || '',
       adresse: userData.adresse || '',
       ville: userData.ville || 'Paris',
+      codePostal: userData.codePostal || '',
       email: userData.email || 'test@example.com'
     };
 
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest) {
     console.log("✅ [Test Generate] Signature générée, taille:", signatureBuffer.length, "bytes");
 
     // Retourner le document généré
-    return new NextResponse(signatureBuffer, {
+    return new NextResponse(new Uint8Array(signatureBuffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename="signature-${userDataFormatted.prenom}-${userDataFormatted.nom}.docx"`,

@@ -9,7 +9,12 @@ interface Template {
   lastModified?: string;
 }
 
-export default function WordTemplateManager() {
+interface WordTemplateManagerProps {
+  onTemplateLoaded?: (templateBuffer: Uint8Array) => void;
+  onError?: (errorMessage: string) => void;
+}
+
+export default function WordTemplateManager({ onTemplateLoaded, onError }: WordTemplateManagerProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -58,8 +63,11 @@ export default function WordTemplateManager() {
       if (response.ok) {
         // Lire le contenu du fichier
         const buffer = await response.arrayBuffer();
+        const templateBuffer = new Uint8Array(buffer);
         const content = new TextDecoder().decode(buffer);
         
+        // Appel du callback si présent
+        if(onTemplateLoaded) onTemplateLoaded(templateBuffer);
         console.log("📄 Contenu du fichier:", content);
         
         // Afficher le contenu dans une modal
@@ -71,9 +79,10 @@ export default function WordTemplateManager() {
       } else {
         throw new Error('Erreur lors de la lecture');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la lecture:", error);
       setDownloadStatus(prev => ({ ...prev, [templateName]: 'error' }));
+      if(onError) onError(error?.message || 'Erreur inconnue');
     }
   };
 

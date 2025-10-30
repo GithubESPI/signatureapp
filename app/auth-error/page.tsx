@@ -1,11 +1,23 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-export default function AuthErrorPage() {
+export default function AuthErrorPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <AuthErrorPage />
+    </Suspense>
+  );
+}
+
+function AuthErrorPage() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const error = searchParams.get("error");

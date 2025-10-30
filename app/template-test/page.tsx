@@ -5,15 +5,15 @@ import WordTemplateManager from "@/components/WordTemplateManager";
 import SasConnectionTest from "@/components/SasConnectionTest";
 
 export default function TemplateTestPage() {
-  const [loadedTemplate, setLoadedTemplate] = useState<Buffer | null>(null);
+  const [loadedTemplate, setLoadedTemplate] = useState<Uint8Array | null>(null);
   const [error, setError] = useState<string>("");
 
-  const handleTemplateLoaded = (templateBuffer: Buffer) => {
+  const handleTemplateLoaded = (templateBuffer: Uint8Array) => {
     setLoadedTemplate(templateBuffer);
     setError("");
     console.log("Template chargé avec succès:", {
       size: templateBuffer.length,
-      type: "Buffer"
+      type: "Uint8Array"
     });
   };
 
@@ -59,7 +59,7 @@ export default function TemplateTestPage() {
                 <p className="font-medium">✅ Template chargé avec succès!</p>
                 <div className="mt-2 text-sm">
                   <p><strong>Taille:</strong> {loadedTemplate.length} bytes</p>
-                  <p><strong>Type:</strong> Buffer</p>
+                  <p><strong>Type:</strong> Uint8Array</p>
                   <p><strong>Statut:</strong> Prêt pour le traitement</p>
                 </div>
               </div>
