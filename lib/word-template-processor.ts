@@ -60,7 +60,7 @@ export class WordTemplateProcessor {
         }
       });
       
-      console.log("✅ [TemplateProcessor] Document généré avec succès");
+      console.log("✅ [TemplateProcessor - generateSignature] Document généré avec succès");
       return Buffer.from(report);
       
     } catch (error) {
