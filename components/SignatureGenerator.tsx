@@ -43,6 +43,41 @@ const INDICATIFS_PAYS = [
   { code: 'CA', nom: 'Canada', indicatif: '+1' }
 ];
 
+// Fonction pour formater un numéro de téléphone avec des espaces pour une meilleure lisibilité
+const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
+  if (!phone) return '';
+  
+  // Nettoyer le numéro (enlever les espaces, tirets, points)
+  const cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
+  
+  // Retirer le 0 au début si présent pour la France
+  const phoneWithoutZero = cleanPhone.startsWith('0') ? cleanPhone.substring(1) : cleanPhone;
+  
+  if (indicatifPays === 'FR') {
+    // Format français : XX XX XX XX XX (9 chiffres après retrait du 0)
+    if (phoneWithoutZero.length === 9) {
+      return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
+    }
+    // Si le format n'est pas standard, retourner avec espaces tous les 2 chiffres
+    return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
+  } else if (indicatifPays === 'CA') {
+    // Format canadien : XXX XXX XXXX (10 chiffres)
+    if (phoneWithoutZero.length === 10) {
+      return `${phoneWithoutZero.slice(0, 3)} ${phoneWithoutZero.slice(3, 6)} ${phoneWithoutZero.slice(6)}`;
+    }
+    // Si le format n'est pas standard, retourner avec espaces
+    return phoneWithoutZero.match(/.{1,3}/g)?.join(' ') || phoneWithoutZero;
+  }
+  
+  return phoneWithoutZero;
+};
+
+// Fonction pour nettoyer le numéro de téléphone (enlever les espaces pour stockage)
+const cleanPhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  return phone.replace(/\s/g, '').replace(/[-.]/g, '');
+};
+
 // Base de données des adresses avec villes et codes postaux correspondants
 const ADRESSES_REFERENCE = [
   { id: "levallois", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
@@ -135,10 +170,19 @@ export default function SignatureGenerator() {
   };
 
   const handleInputChange = (field: keyof UserData, value: string) => {
-    setUserData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // Pour le téléphone, formater avec des espaces à l'affichage mais stocker sans espaces
+    if (field === 'telephone') {
+      const cleanedValue = cleanPhoneNumber(value);
+      setUserData(prev => ({
+        ...prev,
+        telephone: cleanedValue
+      }));
+    } else {
+      setUserData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
 
     // Gestion automatique de la sélection d'adresse
     if (field === 'adresseId' && value) {
@@ -162,19 +206,22 @@ export default function SignatureGenerator() {
   const generatePreviewHtml = () => {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
     
-    // Débogage du format téléphone pour la prévisualisation
+    const fullName = `${prenom} ${nom}`;
+    const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
+    
+    // Calculer les positions comme dans le PNG (mêmes dimensions 2200x700)
+    const width = 2200;
+    const height = 700;
+    const leftMargin = 1100; // Position à gauche pour la section droite (identique au PNG)
+    
+    // Formater le téléphone
+    let phoneDisplay = '';
     if (telephone) {
       const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
-      const phoneDisplay = `(${indicatifPays === 'FR' ? '+33' : '+1'}) ${cleanPhone}`;
-      console.log('📞 Format téléphone Preview:', phoneDisplay, 'Original:', telephone);
+      const formattedPhone = formatPhoneNumber(cleanPhone, indicatifPays);
+      const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
+      phoneDisplay = `(${indicatif}) ${formattedPhone}`;
     }
-    
-    const fullName = `${prenom} ${nom}`;
-    const fullAddress = [
-      adresse,
-      codePostal,
-      ville
-    ].filter(Boolean).join(', ');
 
     return `
 <!DOCTYPE html>
@@ -185,98 +232,104 @@ export default function SignatureGenerator() {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     
-    .signature-container {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
       font-family: 'Poppins', sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
-      color: white;
-      padding: 40px;
-      border-radius: 8px;
+    }
+    
+    .signature-container {
+      width: ${width}px;
+      height: ${height}px;
       position: relative;
+      background-image: url('/images/model-signature.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       overflow: hidden;
     }
     
     .signature-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .left-section {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .logo {
-      font-size: 2.5rem;
-      font-weight: 300;
-      letter-spacing: 0.2em;
-      margin-bottom: 12px;
-    }
-    
-    .tagline {
-      font-size: 0.875rem;
-      font-weight: 300;
-      letter-spacing: 0.1em;
-      line-height: 1.2;
     }
     
     .right-section {
+      position: absolute;
+      left: ${leftMargin}px;
+      top: 130px;
       display: flex;
       flex-direction: column;
-      text-align: right;
-      gap: 4px;
+      align-items: flex-start;
+      color: white;
     }
     
     .name {
-      font-size: 1.25rem;
+      font-size: 42px;
       font-weight: 600;
-      line-height: 1.2;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      margin-bottom: 65px;
+      line-height: 1;
     }
     
     .function {
-      font-size: 0.875rem;
+      font-size: 30px;
       font-weight: 500;
-      line-height: 1.2;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      margin-bottom: 60px;
+      line-height: 1;
     }
     
     .contact-info {
-      font-size: 0.875rem;
+      font-size: 30px;
       font-weight: 400;
-      line-height: 1.2;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      margin-bottom: 60px;
+      line-height: 1;
     }
     
     .website {
-      font-size: 0.875rem;
+      font-size: 30px;
       font-weight: 400;
-      line-height: 1.2;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      line-height: 1;
+    }
+    
+    .website a {
+      color: white;
+      text-decoration: none;
+    }
+    
+    .website a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <div class="signature-container">
     <div class="signature-content">
-      <!-- Section gauche - Logo et tagline -->
-      <div class="left-section">
-        <div class="logo">ESPI</div>
-        <div class="tagline">
-          <div>FORMER</div>
-          <div>À L'IMMOBILIER</div>
-          <div>DE DEMAIN</div>
-        </div>
-      </div>
-      
-      <!-- Section droite - Informations utilisateur -->
+      <!-- Section droite - Informations utilisateur (alignée comme le PNG) -->
       <div class="right-section">
         <div class="name">${fullName}</div>
         ${fonction ? `<div class="function">${fonction}</div>` : ''}
-        ${telephone ? `<div class="contact-info">(${indicatifPays === 'FR' ? '+33' : '+1'}) ${telephone.startsWith('0') ? telephone.substring(1) : telephone}</div>` : ''} <!-- Format téléphone corrigé v3 -->
+        ${telephone ? `<div class="contact-info">${phoneDisplay}</div>` : ''}
         ${fullAddress ? `<div class="contact-info">${fullAddress}</div>` : ''}
-        ${email ? `<div class="contact-info">${email}</div>` : ''}
-        <div class="website">www.groupe-espi.fr</div>
+        <div class="website"><a href="https://www.groupe-espi.fr">www.groupe-espi.fr</a></div>
       </div>
     </div>
   </div>
@@ -330,10 +383,10 @@ export default function SignatureGenerator() {
         throw new Error('Impossible de créer le contexte canvas');
       }
 
-      // Dimensions de la signature améliorées pour plus d'aération
-      const width = 1000; // Augmenté de 800 à 1000
-      const height = 280; // Augmenté de 210 à 280
-      canvas.width = width * 2; // Haute qualité
+      // Dimensions de la signature PNG téléchargée - grandes dimensions pour haute qualité
+      const width = 2200; // Dimension largeur augmentée pour PNG téléchargé
+      const height = 700; // Dimension hauteur augmentée pour PNG téléchargé
+      canvas.width = width * 2; // Haute qualité (double résolution)
       canvas.height = height * 2;
       ctx.scale(2, 2); // Mise à l'échelle pour la haute qualité
 
@@ -379,58 +432,65 @@ export default function SignatureGenerator() {
       
       
 
-      // Dessiner les informations utilisateur (droite) - exactement comme dans la prévisualisation
+      // Dessiner les informations utilisateur (droite) - alignées à gauche avec bons espacements
       const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
       const fullName = `${prenom} ${nom}`;
       const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
 
-      // Positionnement aligné avec la section gauche (section droite)
+      // Positionnement aligné à gauche avec marge pour visibilité
       ctx.textAlign = 'left';
-      let yPosition = 80; // Élevé verticalement pour un meilleur alignement
-      const leftMargin = 550; // Position ajustée pour la nouvelle largeur
+      // Calculer le nombre d'éléments pour bien centrer verticalement
+      let elementCount = 1; // Nom toujours présent
+      if (fonction) elementCount++;
+      if (telephone) elementCount++;
+      if (fullAddress) elementCount++;
+      // Email retiré de la signature
+      elementCount++; // Site web toujours présent
+      
+      // Espacement vertical total utilisé (130 pour nom + 110 pour chaque élément + 130 final)
+      const totalSpacing = 130 + (elementCount - 1) * 110 + 130;
+      const startY = (height - totalSpacing) / 2 + 130; // Centrer verticalement
+      let yPosition = Math.max(160, startY); // Minimum 160px du haut (ajusté pour nouvelle hauteur 700)
+      const leftMargin = 1100; // Position à gauche pour la section droite (ajusté pour nouvelle largeur 2200)
 
-      // Nom (text-xl font-semibold) - taille augmentée
-      ctx.font = '600 24px Poppins, sans-serif';
+      // Nom (text-xl font-semibold) - taille augmentée pour meilleure lisibilité PNG
+      ctx.font = '600 48px Poppins, sans-serif';
       ctx.fillText(fullName, leftMargin, yPosition);
-      yPosition += 35; // Espacement augmenté
+      yPosition += 130; // Espacement vertical très largement augmenté pour PNG
 
-      // Fonction (text-sm font-medium) - taille augmentée
+      // Fonction (text-sm font-medium) - taille augmentée pour meilleure lisibilité PNG
       if (fonction) {
-        ctx.font = '500 16px Poppins, sans-serif';
+        ctx.font = '700 42px Poppins, sans-serif';
         ctx.fillText(fonction, leftMargin, yPosition);
-        yPosition += 25; // Espacement augmenté
+        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
       }
 
-      // Téléphone (text-sm) - taille augmentée avec indicatif entre parenthèses
+      // Téléphone (text-sm) - taille augmentée avec indicatif entre parenthèses et espaces
       if (telephone) {
-        ctx.font = '400 16px Poppins, sans-serif';
-        // Retirer le 0 au début du téléphone et mettre l'indicatif entre parenthèses
+        ctx.font = '400 36px Poppins, sans-serif';
+        // Retirer le 0 au début du téléphone et formater avec espaces
         const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
+        const formattedPhone = formatPhoneNumber(cleanPhone, indicatifPays);
         const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
-        const phoneDisplay = `(${indicatif}) ${cleanPhone}`;
+        const phoneDisplay = `(${indicatif}) ${formattedPhone}`;
         console.log('📞 Format téléphone PNG:', phoneDisplay, 'Original:', telephone);
-        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone corrigé
-        yPosition += 25; // Espacement augmenté
+        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone avec espaces
+        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
       }
 
-      // Adresse (text-sm) - taille augmentée
+      // Adresse (text-sm) - taille augmentée pour meilleure lisibilité PNG
       if (fullAddress) {
-        ctx.font = '400 16px Poppins, sans-serif';
+        ctx.font = '400 36px Poppins, sans-serif';
         ctx.fillText(fullAddress, leftMargin, yPosition);
-        yPosition += 25; // Espacement augmenté
+        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
       }
 
-      // Email (text-sm) - taille augmentée
-      if (email) {
-        ctx.font = '400 16px Poppins, sans-serif';
-        ctx.fillText(email, leftMargin, yPosition);
-        yPosition += 25; // Espacement augmenté
-      }
+      // Email retiré de la signature - ne pas afficher
 
-      // Site web (text-sm) - taille augmentée
-      ctx.font = '400 16px Poppins, sans-serif';
+      // Site web (text-sm) - taille augmentée pour meilleure lisibilité PNG
+      ctx.font = '400 36px Poppins, sans-serif';
       ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
-      yPosition += 30; // Marge inférieure normale pour la section droite
+      yPosition += 130; // Marge finale très largement augmentée pour PNG
 
       // Convertir en PNG et télécharger
       canvas.toBlob(async (blob) => {
@@ -496,6 +556,27 @@ export default function SignatureGenerator() {
       alert('Erreur lors de l\'envoi de l\'email. Veuillez réessayer.');
     } finally {
       setIsSendingEmail(false);
+    }
+  };
+
+  // Fonction pour télécharger la signature en HTML (avec liens cliquables)
+  const downloadSignatureHtml = () => {
+    try {
+      const htmlContent = generatePreviewHtml();
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `signature-${userData.prenom}-${userData.nom}.html`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Nettoyer
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement HTML:', error);
+      alert('Erreur lors du téléchargement du fichier HTML. Veuillez réessayer.');
     }
   };
 
@@ -613,10 +694,10 @@ export default function SignatureGenerator() {
               </label>
               <input
                 type="tel"
-                value={userData.telephone}
+                value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
                 onChange={(e) => handleInputChange('telephone', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder="Votre téléphone"
+                placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
               />
             </div>
             
@@ -844,14 +925,12 @@ export default function SignatureGenerator() {
 
           {/* Zone de prévisualisation */}
           {showPreview && (
-            <div className="mt-8">
+            <div className="mt-8 w-full overflow-x-auto">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                 Aperçu de votre signature
               </h3>
-              <div className="flex justify-center">
-                <div className="max-w-2xl w-full" ref={previewRef}>
-                  <SignaturePreview userData={userData} />
-                </div>
+              <div className="w-full" ref={previewRef}>
+                <SignaturePreview userData={userData} />
               </div>
             </div>
           )}

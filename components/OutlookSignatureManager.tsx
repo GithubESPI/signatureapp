@@ -144,8 +144,8 @@ export default function OutlookSignatureManager({
       previewContainer.style.position = 'fixed';
       previewContainer.style.left = '0';
       previewContainer.style.top = '0';
-      previewContainer.style.width = '800px';
-      previewContainer.style.height = '200px';
+      previewContainer.style.width = '1500px';
+      previewContainer.style.height = '450px';
       previewContainer.style.zIndex = '9999';
       previewContainer.style.backgroundColor = '#2c5aa0';
       previewContainer.style.borderRadius = '8px';
@@ -201,8 +201,8 @@ export default function OutlookSignatureManager({
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        width: 800,
-        height: 200,
+        width: 1500,
+        height: 450,
         logging: false
       });
 

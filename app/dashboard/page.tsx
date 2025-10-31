@@ -94,15 +94,15 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full">
           {/* User Profile Sidebar */}
           <div className="lg:col-span-1">
             <DashboardUserProfile />
           </div>
 
           {/* Dashboard Content */}
-          <div className="lg:col-span-3 space-y-8">
+          <div className="lg:col-span-3 space-y-8 w-full overflow-x-hidden">
             {/* Welcome Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
