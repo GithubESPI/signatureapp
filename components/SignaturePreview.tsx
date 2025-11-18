@@ -38,12 +38,12 @@ export default function SignaturePreview({ userData, className = "" }: Signature
               </h2>
             </div>
             
-            {/* Fonction */}
+            {/* Fonction - avec retour à la ligne automatique si nécessaire */}
             {userData.fonction && (
-              <div>
+              <div className="max-w-md">
                 <p 
-                  className="font-medium text-white leading-tight"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '24px' }}
+                  className="font-medium text-white leading-tight break-words"
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '24px', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {userData.fonction}
                 </p>
@@ -52,28 +52,28 @@ export default function SignaturePreview({ userData, className = "" }: Signature
             
             {/* Téléphone */}
             {userData.telephone && (() => {
-              // Formater le téléphone avec espaces
-              const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
-                if (!phone) return '';
-                const cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
-                const phoneWithoutZero = cleanPhone.startsWith('0') ? cleanPhone.substring(1) : cleanPhone;
-                
-                if (indicatifPays === 'FR') {
-                  if (phoneWithoutZero.length === 9) {
-                    return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
-                  }
-                  return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
-                } else if (indicatifPays === 'CA') {
-                  if (phoneWithoutZero.length === 10) {
-                    return `${phoneWithoutZero.slice(0, 3)} ${phoneWithoutZero.slice(3, 6)} ${phoneWithoutZero.slice(6)}`;
-                  }
-                  return phoneWithoutZero.match(/.{1,3}/g)?.join(' ') || phoneWithoutZero;
-                }
-                return phoneWithoutZero;
-              };
+              // Formater le téléphone avec 0 et espaces réduits
+              const cleanPhone = userData.telephone.replace(/\s/g, '').replace(/[-.]/g, '');
+              let formattedPhone = '';
               
-              const cleanPhone = userData.telephone.startsWith('0') ? userData.telephone.substring(1) : userData.telephone;
-              const formattedPhone = formatPhoneNumber(cleanPhone, userData.indicatifPays);
+              if (userData.indicatifPays === 'FR') {
+                // Format français avec 0 : 0X XX XX XX XX
+                if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
+                  formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
+                } else {
+                  formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
+                }
+              } else if (userData.indicatifPays === 'CA') {
+                // Format canadien : XXX XXX XXXX
+                if (cleanPhone.length === 10) {
+                  formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
+                } else {
+                  formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
+                }
+              } else {
+                formattedPhone = cleanPhone;
+              }
+              
               const indicatif = userData.indicatifPays === 'FR' ? '+33' : '+1';
               
               return (
@@ -88,12 +88,12 @@ export default function SignaturePreview({ userData, className = "" }: Signature
               );
             })()}
             
-            {/* Adresse complète */}
+            {/* Adresse complète - avec retour à la ligne automatique si nécessaire */}
             {(userData.adresse || userData.codePostal || userData.ville) && (
-              <div>
+              <div className="max-w-md">
                 <p 
-                  className="text-white leading-tight"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '24px' }}
+                  className="text-white leading-tight break-words"
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '24px', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {[
                     userData.adresse,

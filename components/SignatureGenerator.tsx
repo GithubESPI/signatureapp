@@ -82,7 +82,7 @@ const cleanPhoneNumber = (phone: string): string => {
 const ADRESSES_REFERENCE = [
   { id: "levallois", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
   { id: "paris", adresse: "23 rue Cronstadt", ville: "PARIS", codePostal: "75015", pays: "FR" },
-  { id: "nantes", adresse: "285 Rue Louis de Broglie", ville: "Nantes", codePostal: "44300", pays: "FR" },
+  { id: "nantes", adresse: "285 rue Louis de Broglie, CS 62357", ville: "NANTES Cedex 3", codePostal: "44323", pays: "FR" },
   { id: "marseille-docks", adresse: "Les Docks Village", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
   { id: "marseille-lazaret", adresse: "20 quai du Lazaret", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
   { id: "bordeaux", adresse: "73 Av. Thiers", ville: "Bordeaux", codePostal: "33100", pays: "FR" },
@@ -214,11 +214,30 @@ export default function SignatureGenerator() {
     const height = 700;
     const leftMargin = 1100; // Position à gauche pour la section droite (identique au PNG)
     
-    // Formater le téléphone
+    // Formater le téléphone avec 0 et espaces réduits
     let phoneDisplay = '';
     if (telephone) {
-      const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
-      const formattedPhone = formatPhoneNumber(cleanPhone, indicatifPays);
+      const cleanPhone = telephone.replace(/\s/g, '').replace(/[-.]/g, '');
+      let formattedPhone = '';
+      
+      if (indicatifPays === 'FR') {
+        // Format français avec 0 : 0X XX XX XX XX
+        if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
+          formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
+        } else {
+          formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
+        }
+      } else if (indicatifPays === 'CA') {
+        // Format canadien : XXX XXX XXXX
+        if (cleanPhone.length === 10) {
+          formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
+        } else {
+          formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
+        }
+      } else {
+        formattedPhone = cleanPhone;
+      }
+      
       const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
       phoneDisplay = `(${indicatif}) ${formattedPhone}`;
     }
@@ -439,50 +458,123 @@ export default function SignatureGenerator() {
 
       // Positionnement aligné à gauche avec marge pour visibilité
       ctx.textAlign = 'left';
-      // Calculer le nombre d'éléments pour bien centrer verticalement
-      let elementCount = 1; // Nom toujours présent
-      if (fonction) elementCount++;
-      if (telephone) elementCount++;
-      if (fullAddress) elementCount++;
-      // Email retiré de la signature
-      elementCount++; // Site web toujours présent
+      const leftMargin = 1100; // Position à gauche pour la section droite (ajusté pour nouvelle largeur 2200)
       
-      // Espacement vertical total utilisé (130 pour nom + 110 pour chaque élément + 130 final)
-      const totalSpacing = 130 + (elementCount - 1) * 110 + 130;
+      // Largeur disponible pour le texte (largeur totale - marge gauche - marge droite)
+      const maxWidth = width - leftMargin - 100; // 100px de marge droite
+      const lineHeight = 50; // Hauteur de ligne pour le retour à la ligne
+      
+      // Fonction pour découper le texte en plusieurs lignes si nécessaire (réutilisable)
+      const wrapText = (text: string, maxWidth: number, currentFont: string): string[] => {
+        // Sauvegarder la police actuelle
+        const savedFont = ctx.font;
+        ctx.font = currentFont;
+        
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+        
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const metrics = ctx.measureText(testLine);
+          
+          if (metrics.width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        
+        // Restaurer la police
+        ctx.font = savedFont;
+        
+        return lines;
+      };
+      
+      // Estimer le nombre de lignes pour chaque élément (pour le centrage vertical)
+      ctx.font = '700 42px Poppins, sans-serif'; // Police de la fonction pour estimation
+      const functionLinesCount = fonction ? wrapText(fonction, maxWidth, ctx.font).length : 0;
+      ctx.font = '400 36px Poppins, sans-serif'; // Police de l'adresse pour estimation
+      const addressLinesCount = fullAddress ? wrapText(fullAddress, maxWidth, ctx.font).length : 0;
+      
+      // Calculer le nombre total de lignes (nom = 1, fonction = N lignes, téléphone = 1, adresse = N lignes, site = 1)
+      const totalLines = 1 + functionLinesCount + (telephone ? 1 : 0) + addressLinesCount + 1; // nom + fonction + téléphone + adresse + site
+      
+      // Espacement vertical total utilisé (130 pour nom + 110 pour chaque ligne d'élément + 130 final)
+      // Chaque ligne supplémentaire ajoute lineHeight (50px) entre les lignes
+      const totalSpacing = 130 + (totalLines - 1) * 110 + (functionLinesCount > 1 ? (functionLinesCount - 1) * lineHeight : 0) + (addressLinesCount > 1 ? (addressLinesCount - 1) * lineHeight : 0) + 130;
       const startY = (height - totalSpacing) / 2 + 130; // Centrer verticalement
       let yPosition = Math.max(160, startY); // Minimum 160px du haut (ajusté pour nouvelle hauteur 700)
-      const leftMargin = 1100; // Position à gauche pour la section droite (ajusté pour nouvelle largeur 2200)
 
       // Nom (text-xl font-semibold) - taille augmentée pour meilleure lisibilité PNG
       ctx.font = '600 48px Poppins, sans-serif';
       ctx.fillText(fullName, leftMargin, yPosition);
       yPosition += 130; // Espacement vertical très largement augmenté pour PNG
 
-      // Fonction (text-sm font-medium) - taille augmentée pour meilleure lisibilité PNG
+      // Fonction (text-sm font-medium) - taille augmentée pour meilleure lisibilité PNG avec retour à la ligne automatique
       if (fonction) {
         ctx.font = '700 42px Poppins, sans-serif';
-        ctx.fillText(fonction, leftMargin, yPosition);
-        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
+        const functionLines = wrapText(fonction, maxWidth, ctx.font);
+        functionLines.forEach((line, index) => {
+          ctx.fillText(line, leftMargin, yPosition);
+          if (index < functionLines.length - 1) {
+            yPosition += lineHeight; // Espacement entre les lignes de la fonction
+          }
+        });
+        
+        yPosition += 110; // Espacement vertical très largement augmenté pour PNG après la fonction
       }
 
-      // Téléphone (text-sm) - taille augmentée avec indicatif entre parenthèses et espaces
+      // Téléphone (text-sm) - taille augmentée avec indicatif et 0, espaces réduits
       if (telephone) {
         ctx.font = '400 36px Poppins, sans-serif';
-        // Retirer le 0 au début du téléphone et formater avec espaces
-        const cleanPhone = telephone.startsWith('0') ? telephone.substring(1) : telephone;
-        const formattedPhone = formatPhoneNumber(cleanPhone, indicatifPays);
+        // Nettoyer le téléphone mais garder le 0
+        const cleanPhone = telephone.replace(/\s/g, '').replace(/[-.]/g, '');
+        // Formater avec espaces réduits (un espace tous les 4 chiffres au lieu de 2)
+        let formattedPhone = '';
+        if (indicatifPays === 'FR') {
+          // Format français avec 0 : 0X XX XX XX XX (un espace tous les 2 chiffres après le 0)
+          if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
+            formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
+          } else {
+            // Format alternatif si pas de 0 au début
+            formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
+          }
+        } else if (indicatifPays === 'CA') {
+          // Format canadien : XXX XXX XXXX
+          if (cleanPhone.length === 10) {
+            formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
+          } else {
+            formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
+          }
+        } else {
+          formattedPhone = cleanPhone;
+        }
+        
         const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
         const phoneDisplay = `(${indicatif}) ${formattedPhone}`;
         console.log('📞 Format téléphone PNG:', phoneDisplay, 'Original:', telephone);
-        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone avec espaces
+        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone avec 0 et espaces réduits
         yPosition += 110; // Espacement vertical très largement augmenté pour PNG
       }
 
-      // Adresse (text-sm) - taille augmentée pour meilleure lisibilité PNG
+      // Adresse (text-sm) - taille augmentée pour meilleure lisibilité PNG avec retour à la ligne automatique
       if (fullAddress) {
         ctx.font = '400 36px Poppins, sans-serif';
-        ctx.fillText(fullAddress, leftMargin, yPosition);
-        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
+        const addressLines = wrapText(fullAddress, maxWidth, ctx.font);
+        addressLines.forEach((line, index) => {
+          ctx.fillText(line, leftMargin, yPosition);
+          if (index < addressLines.length - 1) {
+            yPosition += lineHeight; // Espacement entre les lignes de l'adresse
+          }
+        });
+        
+        yPosition += 110; // Espacement vertical très largement augmenté pour PNG après l'adresse
       }
 
       // Email retiré de la signature - ne pas afficher
