@@ -7,6 +7,7 @@ import { FileText, Download, Loader2, CheckCircle, XCircle, User, Phone, MapPin,
 import OutlookSignatureManager from "./OutlookSignatureManager";
 import SignaturePreview from "./SignaturePreview";
 import { SignatureConverter } from "@/lib/signature-converter";
+import html2canvas from "html2canvas";
 
 interface UserData {
   prenom: string;
@@ -393,196 +394,19 @@ export default function SignatureGenerator() {
   };
 
   const downloadSignature = async () => {
+    if (!previewRef.current) {
+      alert("L'aperçu de la signature n'est pas disponible.");
+      return;
+    }
+
     setIsDownloading(true);
     try {
-      // Créer un canvas pour dessiner la signature
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Impossible de créer le contexte canvas');
-      }
-
-      // Dimensions de la signature PNG téléchargée - grandes dimensions pour haute qualité
-      const width = 2200; // Dimension largeur augmentée pour PNG téléchargé
-      const height = 700; // Dimension hauteur augmentée pour PNG téléchargé
-      canvas.width = width * 2; // Haute qualité (double résolution)
-      canvas.height = height * 2;
-      ctx.scale(2, 2); // Mise à l'échelle pour la haute qualité
-
-      // Charger l'image modèle
-      const backgroundImage = new Image();
-      backgroundImage.crossOrigin = 'anonymous';
-      
-      await new Promise((resolve, reject) => {
-        backgroundImage.onload = resolve;
-        backgroundImage.onerror = reject;
-        backgroundImage.src = '/images/model-signature.png';
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2, // Augmenter la résolution pour une meilleure qualité
+        useCORS: true, // Permettre le chargement d'images cross-origin
+        allowTaint: true,
+        backgroundColor: null, // Garder le fond transparent si nécessaire
       });
-
-      // Dessiner l'image de fond en préservant les proportions
-      const imageAspectRatio = backgroundImage.naturalWidth / backgroundImage.naturalHeight;
-      const canvasAspectRatio = width / height;
-      
-      let drawWidth, drawHeight, drawX, drawY;
-      
-      if (imageAspectRatio > canvasAspectRatio) {
-        // L'image est plus large que le canvas, ajuster par la hauteur
-        drawHeight = height;
-        drawWidth = height * imageAspectRatio;
-        drawX = (width - drawWidth) / 2;
-        drawY = 0;
-      } else {
-        // L'image est plus haute que le canvas, ajuster par la largeur
-        drawWidth = width;
-        drawHeight = width / imageAspectRatio;
-        drawX = 0;
-        drawY = (height - drawHeight) / 2;
-      }
-      
-      ctx.drawImage(backgroundImage, drawX, drawY, drawWidth, drawHeight);
-
-      // Configuration de la police
-      ctx.fillStyle = 'white';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-
-      // Section gauche avec logo ESPI et tagline - aérée avec padding
-      
-      
-      
-
-      // Dessiner les informations utilisateur (droite) - alignées à gauche avec bons espacements
-      const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
-      const fullName = `${prenom} ${nom}`;
-      const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
-
-      // Positionnement aligné à gauche avec marge pour visibilité
-      ctx.textAlign = 'left';
-      const leftMargin = 1100; // Position à gauche pour la section droite (ajusté pour nouvelle largeur 2200)
-      
-      // Largeur disponible pour le texte (largeur totale - marge gauche - marge droite)
-      const maxWidth = width - leftMargin - 100; // 100px de marge droite
-      const lineHeight = 50; // Hauteur de ligne pour le retour à la ligne
-      
-      // Fonction pour découper le texte en plusieurs lignes si nécessaire (réutilisable)
-      const wrapText = (text: string, maxWidth: number, currentFont: string): string[] => {
-        // Sauvegarder la police actuelle
-        const savedFont = ctx.font;
-        ctx.font = currentFont;
-        
-        const words = text.split(' ');
-        const lines: string[] = [];
-        let currentLine = '';
-        
-        for (const word of words) {
-          const testLine = currentLine ? `${currentLine} ${word}` : word;
-          const metrics = ctx.measureText(testLine);
-          
-          if (metrics.width > maxWidth && currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = testLine;
-          }
-        }
-        
-        if (currentLine) {
-          lines.push(currentLine);
-        }
-        
-        // Restaurer la police
-        ctx.font = savedFont;
-        
-        return lines;
-      };
-      
-      // Estimer le nombre de lignes pour chaque élément (pour le centrage vertical)
-      ctx.font = '700 42px Poppins, sans-serif'; // Police de la fonction pour estimation
-      const functionLinesCount = fonction ? wrapText(fonction, maxWidth, ctx.font).length : 0;
-      ctx.font = '400 36px Poppins, sans-serif'; // Police de l'adresse pour estimation
-      const addressLinesCount = fullAddress ? wrapText(fullAddress, maxWidth, ctx.font).length : 0;
-      
-      // Calculer le nombre total de lignes (nom = 1, fonction = N lignes, téléphone = 1, adresse = N lignes, site = 1)
-      const totalLines = 1 + functionLinesCount + (telephone ? 1 : 0) + addressLinesCount + 1; // nom + fonction + téléphone + adresse + site
-      
-      // Espacement vertical total utilisé (130 pour nom + 110 pour chaque ligne d'élément + 130 final)
-      // Chaque ligne supplémentaire ajoute lineHeight (50px) entre les lignes
-      const totalSpacing = 130 + (totalLines - 1) * 110 + (functionLinesCount > 1 ? (functionLinesCount - 1) * lineHeight : 0) + (addressLinesCount > 1 ? (addressLinesCount - 1) * lineHeight : 0) + 130;
-      const startY = (height - totalSpacing) / 2 + 130; // Centrer verticalement
-      let yPosition = Math.max(160, startY); // Minimum 160px du haut (ajusté pour nouvelle hauteur 700)
-
-      // Nom (text-xl font-semibold) - taille augmentée pour meilleure lisibilité PNG
-      ctx.font = '600 48px Poppins, sans-serif';
-      ctx.fillText(fullName, leftMargin, yPosition);
-      yPosition += 130; // Espacement vertical très largement augmenté pour PNG
-
-      // Fonction (text-sm font-medium) - taille augmentée pour meilleure lisibilité PNG avec retour à la ligne automatique
-      if (fonction) {
-        ctx.font = '700 42px Poppins, sans-serif';
-        const functionLines = wrapText(fonction, maxWidth, ctx.font);
-        functionLines.forEach((line, index) => {
-          ctx.fillText(line, leftMargin, yPosition);
-          if (index < functionLines.length - 1) {
-            yPosition += lineHeight; // Espacement entre les lignes de la fonction
-          }
-        });
-        
-        yPosition += 110; // Espacement vertical très largement augmenté pour PNG après la fonction
-      }
-
-      // Téléphone (text-sm) - taille augmentée avec indicatif et 0, espaces réduits
-      if (telephone) {
-        ctx.font = '400 36px Poppins, sans-serif';
-        // Nettoyer le téléphone mais garder le 0
-        const cleanPhone = telephone.replace(/\s/g, '').replace(/[-.]/g, '');
-        // Formater avec espaces réduits (un espace tous les 4 chiffres au lieu de 2)
-        let formattedPhone = '';
-        if (indicatifPays === 'FR') {
-          // Format français avec 0 : 0X XX XX XX XX (un espace tous les 2 chiffres après le 0)
-          if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
-            formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
-          } else {
-            // Format alternatif si pas de 0 au début
-            formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
-          }
-        } else if (indicatifPays === 'CA') {
-          // Format canadien : XXX XXX XXXX
-          if (cleanPhone.length === 10) {
-            formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
-          } else {
-            formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
-          }
-        } else {
-          formattedPhone = cleanPhone;
-        }
-        
-        const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
-        const phoneDisplay = `(${indicatif}) ${formattedPhone}`;
-        console.log('📞 Format téléphone PNG:', phoneDisplay, 'Original:', telephone);
-        ctx.fillText(phoneDisplay, leftMargin, yPosition); // Format téléphone avec 0 et espaces réduits
-        yPosition += 110; // Espacement vertical très largement augmenté pour PNG
-      }
-
-      // Adresse (text-sm) - taille augmentée pour meilleure lisibilité PNG avec retour à la ligne automatique
-      if (fullAddress) {
-        ctx.font = '400 36px Poppins, sans-serif';
-        const addressLines = wrapText(fullAddress, maxWidth, ctx.font);
-        addressLines.forEach((line, index) => {
-          ctx.fillText(line, leftMargin, yPosition);
-          if (index < addressLines.length - 1) {
-            yPosition += lineHeight; // Espacement entre les lignes de l'adresse
-          }
-        });
-        
-        yPosition += 110; // Espacement vertical très largement augmenté pour PNG après l'adresse
-      }
-
-      // Email retiré de la signature - ne pas afficher
-
-      // Site web (text-sm) - taille augmentée pour meilleure lisibilité PNG
-      ctx.font = '400 36px Poppins, sans-serif';
-      ctx.fillText('www.groupe-espi.fr', leftMargin, yPosition);
-      yPosition += 130; // Marge finale très largement augmentée pour PNG
 
       // Convertir en PNG et télécharger
       canvas.toBlob(async (blob) => {
@@ -603,7 +427,7 @@ export default function SignatureGenerator() {
         }
       }, 'image/png', 1.0);
     } catch (error) {
-      console.error('Erreur lors de la génération PNG:', error);
+      console.error('Erreur lors de la génération PNG avec html2canvas:', error);
       alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
     } finally {
       setIsDownloading(false);
