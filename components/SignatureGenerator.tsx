@@ -296,34 +296,34 @@ export default function SignatureGenerator() {
     }
     
     .name {
-      font-size: 42px;
+      font-size: 48px;
       font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      margin-bottom: 70px;
+      line-height: 1;
+    }
+    
+    .function {
+      font-size: 36px;
+      font-weight: 500;
       font-family: 'Poppins', sans-serif;
       color: white;
       margin-bottom: 65px;
       line-height: 1;
     }
     
-    .function {
-      font-size: 30px;
-      font-weight: 500;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      margin-bottom: 60px;
-      line-height: 1;
-    }
-    
     .contact-info {
-      font-size: 30px;
+      font-size: 34px;
       font-weight: 400;
       font-family: 'Poppins', sans-serif;
       color: white;
-      margin-bottom: 60px;
+      margin-bottom: 65px;
       line-height: 1;
     }
     
     .website {
-      font-size: 30px;
+      font-size: 34px;
       font-weight: 400;
       font-family: 'Poppins', sans-serif;
       color: white;

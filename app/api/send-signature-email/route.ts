@@ -34,6 +34,10 @@ export async function POST(request: NextRequest) {
           
           <p>Votre signature personnalisée a été générée avec succès. Vous trouverez l'image de votre signature en pièce jointe.</p>
           
+          <a href="https://groupe-espi.fr/" target="_blank">
+            <img src="${signatureImage}" alt="Signature ESPI" style="width:100%; max-width:600px; height:auto;" />
+          </a>
+
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1e40af; margin-top: 0;">Instructions d'installation :</h3>
             <ol style="color: #374151;">
