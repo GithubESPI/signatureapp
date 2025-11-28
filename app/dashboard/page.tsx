@@ -3,13 +3,13 @@
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  User, 
-  Mail, 
-  Building, 
-  Settings, 
-  FileText, 
-  Download, 
+import {
+  User,
+  Mail,
+  Building,
+  Settings,
+  FileText,
+  Download,
   Send,
   LogOut,
   CheckCircle,
@@ -55,8 +55,8 @@ export default function Dashboard() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Accès non autorisé</h2>
           <p className="text-gray-600 mb-4">Vous devez être connecté pour accéder au dashboard.</p>
-          <a 
-            href="/login" 
+          <a
+            href="/login"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Se connecter
@@ -71,12 +71,12 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto justify-center sm:justify-start">
               <FileText className="w-8 h-8 text-blue-600 mr-3" />
               <h1 className="text-2xl font-bold text-gray-900">Signature App</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{session.user?.name}</p>
                 <p className="text-xs text-gray-500">{session.user?.email}</p>
@@ -125,26 +125,14 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-        
-
-        
-
-                   {/* Signature Generator Section */}
-                   <motion.div
-                     initial={{ opacity: 0, y: 20 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     transition={{ duration: 0.5, delay: 0.8 }}
-                   >
-                     <SignatureGenerator />
-                   </motion.div>
-
-                   
-
-                   
-
-        
-
-        
+            {/* Signature Generator Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <SignatureGenerator />
+            </motion.div>
           </div>
         </div>
       </main>

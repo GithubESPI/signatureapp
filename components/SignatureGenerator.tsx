@@ -29,7 +29,7 @@ interface TemplateInfo {
 
 const VILLES_OPTIONS = [
   'Lyon',
-  'Paris', 
+  'Paris',
   'Bordeaux',
   'Levallois',
   'Marseille',
@@ -47,30 +47,31 @@ const INDICATIFS_PAYS = [
 // Fonction pour formater un numéro de téléphone avec des espaces pour une meilleure lisibilité
 const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
   if (!phone) return '';
-  
+
   // Nettoyer le numéro (enlever les espaces, tirets, points)
-  const cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
-  
-  // Retirer le 0 au début si présent pour la France
-  const phoneWithoutZero = cleanPhone.startsWith('0') ? cleanPhone.substring(1) : cleanPhone;
-  
+  let cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
+
   if (indicatifPays === 'FR') {
-    // Format français : XX XX XX XX XX (9 chiffres après retrait du 0)
-    if (phoneWithoutZero.length === 9) {
-      return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
+    // Si le numéro ne commence pas par 0, on l'ajoute (sauf s'il est vide)
+    if (cleanPhone.length > 0 && !cleanPhone.startsWith('0')) {
+      cleanPhone = '0' + cleanPhone;
     }
-    // Si le format n'est pas standard, retourner avec espaces tous les 2 chiffres
-    return phoneWithoutZero.match(/.{1,2}/g)?.join(' ') || phoneWithoutZero;
+
+    // Format français : XX XX XX XX XX
+    return cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
   } else if (indicatifPays === 'CA') {
+    // Retirer le 0 au début si présent pour le Canada (peu probable mais par sécurité)
+    if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+
     // Format canadien : XXX XXX XXXX (10 chiffres)
-    if (phoneWithoutZero.length === 10) {
-      return `${phoneWithoutZero.slice(0, 3)} ${phoneWithoutZero.slice(3, 6)} ${phoneWithoutZero.slice(6)}`;
+    if (cleanPhone.length === 10) {
+      return `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
     }
     // Si le format n'est pas standard, retourner avec espaces
-    return phoneWithoutZero.match(/.{1,3}/g)?.join(' ') || phoneWithoutZero;
+    return cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
   }
-  
-  return phoneWithoutZero;
+
+  return cleanPhone;
 };
 
 // Fonction pour nettoyer le numéro de téléphone (enlever les espaces pour stockage)
@@ -123,6 +124,7 @@ export default function SignatureGenerator() {
   const [emailSent, setEmailSent] = useState(false);
   const [buildProgress, setBuildProgress] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
+  const hiddenPreviewRef = useRef<HTMLDivElement>(null);
 
   // Charger les informations du template au montage
   useEffect(() => {
@@ -159,7 +161,7 @@ export default function SignatureGenerator() {
     try {
       const response = await fetch('/api/generate-signature?template=model_signature.docx');
       const data = await response.json();
-      
+
       if (data.success) {
         setTemplateInfo(data);
       }
@@ -206,21 +208,21 @@ export default function SignatureGenerator() {
 
   const generatePreviewHtml = () => {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
-    
+
     const fullName = `${prenom} ${nom}`;
     const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
-    
+
     // Calculer les positions comme dans le PNG (mêmes dimensions 2200x700)
     const width = 2200;
     const height = 700;
-    const leftMargin = 1100; // Position à gauche pour la section droite (identique au PNG)
-    
+    const leftMargin = 1550; // Position ajustée vers la droite (environ 61%)
+
     // Formater le téléphone avec 0 et espaces réduits
     let phoneDisplay = '';
     if (telephone) {
       const cleanPhone = telephone.replace(/\s/g, '').replace(/[-.]/g, '');
       let formattedPhone = '';
-      
+
       if (indicatifPays === 'FR') {
         // Format français avec 0 : 0X XX XX XX XX
         if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
@@ -238,7 +240,7 @@ export default function SignatureGenerator() {
       } else {
         formattedPhone = cleanPhone;
       }
-      
+
       const indicatif = indicatifPays === 'FR' ? '+33' : '+1';
       phoneDisplay = `(${indicatif}) ${formattedPhone}`;
     }
@@ -362,7 +364,7 @@ export default function SignatureGenerator() {
     setIsBuildingSignature(true);
     setGenerationStatus('idle');
     setBuildProgress(0);
-    
+
     try {
       // Animation de construction de la signature
       const buildSteps = [
@@ -382,7 +384,7 @@ export default function SignatureGenerator() {
       const signatureHtml = generatePreviewHtml();
       setSignatureHtml(signatureHtml);
       setShowOutlookManager(true);
-      
+
       setGenerationStatus('success');
     } catch (error) {
       console.error("Erreur lors de la génération:", error);
@@ -394,18 +396,33 @@ export default function SignatureGenerator() {
   };
 
   const downloadSignature = async () => {
-    if (!previewRef.current) {
-      alert("L'aperçu de la signature n'est pas disponible.");
+    if (!hiddenPreviewRef.current) {
+      alert("Erreur lors de la génération de l'image.");
       return;
     }
 
     setIsDownloading(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 2, // Augmenter la résolution pour une meilleure qualité
-        useCORS: true, // Permettre le chargement d'images cross-origin
+      // Attendre un court instant pour s'assurer que le rendu est terminé
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(hiddenPreviewRef.current, {
+        scale: 1, // Échelle 1 car le conteneur a déjà la bonne taille (2200px)
+        useCORS: true,
         allowTaint: true,
-        backgroundColor: null, // Garder le fond transparent si nécessaire
+        backgroundColor: null,
+        width: 2200,
+        height: 700,
+        windowWidth: 2200,
+        windowHeight: 700,
+        onclone: (clonedDoc) => {
+          // S'assurer que les éléments sont visibles dans le clone
+          const element = clonedDoc.querySelector('[data-hidden-preview]') as HTMLElement;
+          if (element) {
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+          }
+        }
       });
 
       // Convertir en PNG et télécharger
@@ -417,7 +434,7 @@ export default function SignatureGenerator() {
           a.download = `signature-${userData.prenom}-${userData.nom}.png`;
           document.body.appendChild(a);
           a.click();
-          
+
           // Nettoyer
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
@@ -438,11 +455,11 @@ export default function SignatureGenerator() {
   const sendSignatureByEmail = async (signatureImage: string) => {
     setIsSendingEmail(true);
     setEmailSent(false);
-    
+
     const emailToSend = session?.user?.email || userData.email;
     console.log('📧 Email de destination:', emailToSend);
     console.log('📧 Session user:', session?.user);
-    
+
     try {
       const response = await fetch('/api/send-signature-email', {
         method: 'POST',
@@ -486,7 +503,7 @@ export default function SignatureGenerator() {
       a.download = `signature-${userData.prenom}-${userData.nom}.html`;
       document.body.appendChild(a);
       a.click();
-      
+
       // Nettoyer
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
@@ -548,7 +565,7 @@ export default function SignatureGenerator() {
                 placeholder="Votre prénom"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4 inline mr-2" />
@@ -567,7 +584,7 @@ export default function SignatureGenerator() {
                 placeholder="Votre nom"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Briefcase className="w-4 h-4 inline mr-2" />
@@ -584,7 +601,7 @@ export default function SignatureGenerator() {
                 placeholder="Votre fonction"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Phone className="w-4 h-4 inline mr-2" />
@@ -602,7 +619,7 @@ export default function SignatureGenerator() {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Phone className="w-4 h-4 inline mr-2" />
@@ -616,7 +633,7 @@ export default function SignatureGenerator() {
                 placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
@@ -640,7 +657,7 @@ export default function SignatureGenerator() {
                 </div>
               )}
             </div>
-            
+
             {/* Champs automatiquement remplis - en lecture seule */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -655,7 +672,7 @@ export default function SignatureGenerator() {
                 placeholder="Sélectionnez une adresse ci-dessus"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
@@ -669,7 +686,7 @@ export default function SignatureGenerator() {
                 placeholder="Sélectionnez une adresse ci-dessus"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
@@ -683,7 +700,7 @@ export default function SignatureGenerator() {
                 placeholder="Sélectionnez une adresse ci-dessus"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Mail className="w-4 h-4 inline mr-2" />
@@ -705,15 +722,15 @@ export default function SignatureGenerator() {
           </div>
 
           {/* Boutons d'action */}
-          <div className="flex justify-center space-x-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center space-x-2"
+              className="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center space-x-2"
             >
               <Eye className="w-5 h-5" />
               <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la signature'}</span>
             </button>
-            
+
             {/* Animation de construction de la signature */}
             {isBuildingSignature && (
               <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
@@ -726,7 +743,7 @@ export default function SignatureGenerator() {
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-blue-900 mb-2">Construction de votre signature</h3>
                     <div className="w-full bg-blue-200 rounded-full h-3 mb-2">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${buildProgress}%` }}
                       ></div>
@@ -748,7 +765,7 @@ export default function SignatureGenerator() {
             <button
               onClick={generateSignature}
               disabled={isGenerating || !userData.prenom || !userData.nom}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {isGenerating ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -756,10 +773,10 @@ export default function SignatureGenerator() {
                 getStatusIcon()
               )}
               <span>
-                {isGenerating ? 'Génération...' : 
-                 generationStatus === 'success' ? 'Signature générée !' :
-                 generationStatus === 'error' ? 'Erreur de génération' :
-                 'Générer ma signature'}
+                {isGenerating ? 'Génération...' :
+                  generationStatus === 'success' ? 'Signature générée !' :
+                    generationStatus === 'error' ? 'Erreur de génération' :
+                      'Générer ma signature'}
               </span>
             </button>
 
@@ -767,7 +784,7 @@ export default function SignatureGenerator() {
               <button
                 onClick={downloadSignature}
                 disabled={isDownloading || isSendingEmail}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {isDownloading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -779,10 +796,10 @@ export default function SignatureGenerator() {
                   <Save className="w-5 h-5" />
                 )}
                 <span>
-                  {isDownloading ? 'Téléchargement en cours...' : 
-                   isSendingEmail ? 'Envoi par email...' :
-                   emailSent ? 'Email envoyé !' :
-                   'Télécharger la signature (PNG)'}
+                  {isDownloading ? 'Téléchargement en cours...' :
+                    isSendingEmail ? 'Envoi par email...' :
+                      emailSent ? 'Email envoyé !' :
+                        'Télécharger la signature (PNG)'}
                 </span>
               </button>
             )}
@@ -851,11 +868,28 @@ export default function SignatureGenerator() {
             </div>
           )}
 
-          
+
         </div>
       )}
 
-      
+      {/* Conteneur caché pour la génération d'image haute résolution */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: '-9999px',
+          width: '2200px',
+          height: '700px',
+          overflow: 'hidden'
+        }}
+        data-hidden-preview
+      >
+        <div ref={hiddenPreviewRef} style={{ width: '2200px', height: '700px' }}>
+          <SignaturePreview userData={userData} />
+        </div>
+      </div>
+
+
     </div>
   );
 }

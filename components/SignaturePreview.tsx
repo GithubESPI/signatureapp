@@ -9,59 +9,71 @@ interface SignaturePreviewProps {
 
 export default function SignaturePreview({ userData, className = "" }: SignaturePreviewProps) {
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`w-full ${className}`} style={{ containerType: 'inline-size' }}>
       {/* Image de fond */}
-      <div 
-        className="relative w-full h-auto bg-cover bg-center bg-no-repeat"
+      <div
+        className="relative w-full bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/images/model-signature.png')",
-          minHeight: "450px",
-          aspectRatio: "1500/450"
+          aspectRatio: "2200/700",
         }}
       >
         {/* Overlay pour le contenu */}
-        <div className="absolute inset-0 flex justify-between items-center px-8 py-8">
-          {/* Section gauche - Vide (logo ESPI retiré) */}
+        <div className="absolute inset-0 flex justify-between items-center" style={{ padding: '3.6cqw' }}>
+          {/* Section gauche - Vide */}
           <div className="flex flex-col justify-center">
-            {/* Logo ESPI retiré */}
           </div>
 
           {/* Section droite - Informations utilisateur */}
-          <div className="flex flex-col justify-center text-left ml-auto" style={{ gap: '35px', maxWidth: 'none' }}>
+          <div
+            className="flex flex-col justify-center text-left ml-auto"
+            style={{
+              gap: '1.6cqw',
+              maxWidth: 'none',
+              width: '33%', // Ajusté pour décaler vers la droite (environ 1350px sur 2200px)
+              paddingTop: '6cqw' // Ajustement pour aligner avec le design
+            }}
+          >
             {/* Nom complet */}
             <div>
-              <h2 
-                className="text-3xl font-semibold text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '48px' }}
+              <h2
+                className="font-semibold text-white leading-tight"
+                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2.2cqw' }}
               >
                 {userData.prenom} {userData.nom}
               </h2>
             </div>
-            
-            {/* Fonction - avec retour à la ligne automatique si nécessaire */}
+
+            {/* Fonction */}
             {userData.fonction && (
               <div className="max-w-md">
-                <p 
+                <p
                   className="font-medium text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '36px', wordBreak: 'break-word', whiteSpace: 'normal' }}
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {userData.fonction}
                 </p>
               </div>
             )}
-            
+
             {/* Téléphone */}
             {userData.telephone && (() => {
               // Formater le téléphone avec 0 et espaces réduits
               const cleanPhone = userData.telephone.replace(/\s/g, '').replace(/[-.]/g, '');
               let formattedPhone = '';
-              
+
               if (userData.indicatifPays === 'FR') {
+                let phoneToFormat = cleanPhone;
+                // Ajouter le 0 si manquant (9 chiffres)
+                if (phoneToFormat.length === 9 && !phoneToFormat.startsWith('0')) {
+                  phoneToFormat = '0' + phoneToFormat;
+                }
+
                 // Format français avec 0 : 0X XX XX XX XX
-                if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
-                  formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
+                if (phoneToFormat.length === 10 && phoneToFormat.startsWith('0')) {
+                  formattedPhone = `${phoneToFormat.slice(0, 2)} ${phoneToFormat.slice(2, 4)} ${phoneToFormat.slice(4, 6)} ${phoneToFormat.slice(6, 8)} ${phoneToFormat.slice(8)}`;
                 } else {
-                  formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
+                  formattedPhone = phoneToFormat.match(/.{1,2}/g)?.join(' ') || phoneToFormat;
                 }
               } else if (userData.indicatifPays === 'CA') {
                 // Format canadien : XXX XXX XXXX
@@ -73,27 +85,27 @@ export default function SignaturePreview({ userData, className = "" }: Signature
               } else {
                 formattedPhone = cleanPhone;
               }
-              
+
               const indicatif = userData.indicatifPays === 'FR' ? '+33' : '+1';
-              
+
               return (
                 <div>
-                  <p 
+                  <p
                     className="text-white leading-tight"
-                    style={{ fontFamily: 'Poppins, sans-serif', fontSize: '34px' }}
+                    style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw' }}
                   >
                     ({indicatif}) {formattedPhone}
                   </p>
                 </div>
               );
             })()}
-            
-            {/* Adresse complète - avec retour à la ligne automatique si nécessaire */}
+
+            {/* Adresse complète */}
             {(userData.adresse || userData.codePostal || userData.ville) && (
               <div className="max-w-md">
-                <p 
+                <p
                   className="text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '34px', wordBreak: 'break-word', whiteSpace: 'normal' }}
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {[
                     userData.adresse,
@@ -103,14 +115,12 @@ export default function SignaturePreview({ userData, className = "" }: Signature
                 </p>
               </div>
             )}
-            
-            {/* Email retiré de la signature - ne pas afficher */}
-            
+
             {/* Site web */}
             <div>
-              <p 
+              <p
                 className="text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '34px' }}
+                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw' }}
               >
                 www.groupe-espi.fr
               </p>
