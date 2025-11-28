@@ -19,7 +19,10 @@ export default function SignaturePreview({ userData, className = "" }: Signature
         }}
       >
         {/* Overlay pour le contenu */}
-        <div className="absolute inset-0 flex justify-between items-center" style={{ padding: '3.6cqw' }}>
+        <div
+          className="absolute inset-0 flex justify-between items-start"
+          style={{ padding: '3.6cqw 0.5cqw 3.6cqw 3.6cqw' }}
+        >
           {/* Section gauche - Vide */}
           <div className="flex flex-col justify-center">
           </div>
@@ -30,15 +33,15 @@ export default function SignaturePreview({ userData, className = "" }: Signature
             style={{
               gap: '1.6cqw',
               maxWidth: 'none',
-              width: '33%', // Ajusté pour décaler vers la droite (environ 1350px sur 2200px)
-              paddingTop: '6cqw' // Ajustement pour aligner avec le design
+              width: '45%', // Ajusté à 45% pour décaler légèrement vers la gauche
+              paddingTop: '0.5cqw' // Remonté au maximum
             }}
           >
             {/* Nom complet */}
             <div>
               <h2
                 className="font-semibold text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2.2cqw' }}
+                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2.35cqw', whiteSpace: 'nowrap' }}
               >
                 {userData.prenom} {userData.nom}
               </h2>
@@ -46,10 +49,10 @@ export default function SignaturePreview({ userData, className = "" }: Signature
 
             {/* Fonction */}
             {userData.fonction && (
-              <div className="max-w-md">
+              <div>
                 <p
                   className="font-medium text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.75cqw', whiteSpace: 'normal' }}
                 >
                   {userData.fonction}
                 </p>
@@ -92,7 +95,7 @@ export default function SignaturePreview({ userData, className = "" }: Signature
                 <div>
                   <p
                     className="text-white leading-tight"
-                    style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw' }}
+                    style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', whiteSpace: 'nowrap' }}
                   >
                     ({indicatif}) {formattedPhone}
                   </p>
@@ -102,10 +105,10 @@ export default function SignaturePreview({ userData, className = "" }: Signature
 
             {/* Adresse complète */}
             {(userData.adresse || userData.codePostal || userData.ville) && (
-              <div className="max-w-md">
+              <div>
                 <p
                   className="text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
+                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {[
                     userData.adresse,
@@ -120,7 +123,7 @@ export default function SignaturePreview({ userData, className = "" }: Signature
             <div>
               <p
                 className="text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.55cqw' }}
+                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', whiteSpace: 'nowrap' }}
               >
                 www.groupe-espi.fr
               </p>
