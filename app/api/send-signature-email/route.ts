@@ -22,10 +22,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Créer l'email avec la signature en pièce jointe
+    // Utiliser un objet pour définir le nom d'affichage et masquer l'adresse email
     const mailOptions = {
-      from: process.env.SMTP_USER,
+      from: {
+        name: 'Service Informatique',
+        address: process.env.SMTP_USER || ''
+      },
       to: userEmail,
       subject: `Votre signature ESPI - ${userName}`,
+      headers: {
+        'Reply-To': process.env.SMTP_USER || '',
+        'X-Mailer': 'ESPI Signature App'
+      },
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb; margin-bottom: 20px;">Votre signature ESPI est prête !</h2>
