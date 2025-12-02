@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FileText, Home, User, Settings, LogOut } from "lucide-react";
@@ -8,14 +9,25 @@ import AzureLoginButton from "./AzureLoginButton";
 
 export default function Navigation() {
   const { data: session } = useSession();
+  const pathname = usePathname();
+  
+  // Si l'utilisateur est connecté et sur la page d'accueil, on simplifie la navigation
+  const isHomePage = pathname === "/";
+  const isLoggedInOnHome = session && isHomePage;
 
-  const navItems = [
+  // Tous les éléments de navigation disponibles
+  const allNavItems = [
     { href: "/", label: "Accueil", icon: <Home className="w-5 h-5" /> },
     { href: "/dashboard", label: "Dashboard", icon: <FileText className="w-5 h-5" /> },
     { href: "/signatures", label: "Signatures", icon: <FileText className="w-5 h-5" /> },
     { href: "/template-test", label: "Test Modèles", icon: <FileText className="w-5 h-5" /> },
     { href: "/graph-api-test", label: "Graph API", icon: <FileText className="w-5 h-5" /> },
   ];
+
+  // Filtrer les éléments selon le contexte
+  const navItems = isLoggedInOnHome
+    ? [] // Sur la page d'accueil connecté, pas de liens de navigation (seulement Dashboard si nécessaire)
+    : allNavItems; // Sinon, afficher tous les liens
 
   return (
     <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
@@ -29,43 +41,29 @@ export default function Navigation() {
             <h1 className="text-2xl font-bold text-gray-900">SignatureApp</h1>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                {item.icon}
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            ))}
-          </div>
+          {/* Navigation Links - masqués si utilisateur connecté sur la page d'accueil */}
+          {navItems.length > 0 && (
+            <div className="hidden md:flex items-center space-x-8">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  {item.icon}
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
 
-          {/* User Actions */}
+          {/* User Actions - simplifié pour éviter la redondance */}
           <div className="flex items-center space-x-4">
             {session ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  {session.user?.image ? (
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name || "User"}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-700 hidden sm:block">
-                    {session.user?.name?.split(' ')[0]}
-                  </span>
-                </div>
-                <AzureLoginButton variant="outline" size="sm" />
-              </div>
+              // Utilisateur connecté : AzureLoginButton gère déjà le profil et la déconnexion
+              <AzureLoginButton variant={isLoggedInOnHome ? "outline" : "outline"} size="sm" />
             ) : (
+              // Utilisateur non connecté
               <div className="flex items-center space-x-4">
                 <Link
                   href="/login"
@@ -79,21 +77,23 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden pb-4">
-          <div className="flex flex-wrap gap-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
-            ))}
+        {/* Mobile Navigation - masquée si utilisateur connecté sur la page d'accueil */}
+        {navItems.length > 0 && (
+          <div className="md:hidden pb-4">
+            <div className="flex flex-wrap gap-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );
