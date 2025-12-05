@@ -20,6 +20,8 @@ export default function LoginForm() {
     if (isHydrated && status === "authenticated" && session && !hasRedirected.current) {
       hasRedirected.current = true;
       console.log("🔧 [LoginForm] Utilisateur déjà connecté, redirection vers dashboard");
+      console.log("🔧 [LoginForm] Status:", status);
+      console.log("🔧 [LoginForm] Session:", session);
       
       // Récupérer le callbackUrl depuis les paramètres de l'URL ou utiliser /dashboard par défaut
       const callbackUrlParam = searchParams.get("callbackUrl");
@@ -49,11 +51,9 @@ export default function LoginForm() {
       
       console.log("🔧 [LoginForm] Redirection vers:", redirectUrl);
       
-      // Utiliser window.location.replace pour éviter d'ajouter une entrée dans l'historique
-      // et forcer une redirection complète pour éviter les boucles
-      setTimeout(() => {
-        window.location.replace(redirectUrl);
-      }, 50);
+      // Utiliser window.location.replace immédiatement pour forcer la redirection
+      // Cela évite les boucles en production
+      window.location.replace(redirectUrl);
     }
   }, [isHydrated, status, session, searchParams]);
 
