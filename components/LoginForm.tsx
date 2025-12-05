@@ -1,19 +1,30 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function LoginForm() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
+  // Rediriger vers le dashboard si l'utilisateur est déjà connecté
+  useEffect(() => {
+    if (isHydrated && status === "authenticated" && session) {
+      console.log("🔧 [LoginForm] Utilisateur déjà connecté, redirection vers dashboard");
+      router.push("/dashboard");
+    }
+  }, [isHydrated, status, session, router]);
+
   const handleAzureLogin = () => {
     console.log("🔧 [LoginForm] Tentative de connexion Azure AD...");
     console.log("🔧 [LoginForm] Callback URL: /dashboard");
-    signIn("azure-ad", { callbackUrl: "/dashboard" });
+    signIn("azure-ad", { callbackUrl: "/dashboard", redirect: true });
   };
 
   if (!isHydrated) {

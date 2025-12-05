@@ -46,10 +46,58 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       console.log("🔧 [Auth] Redirection:", { url, baseUrl });
-      // Rediriger vers la page de succès après connexion
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      else if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/auth-success`;
+      
+      try {
+        // Si l'URL est une URL complète, essayer de l'analyser
+        let urlObj: URL;
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          urlObj = new URL(url);
+        } else {
+          // Si c'est une URL relative, la construire avec baseUrl
+          urlObj = new URL(url.startsWith("/") ? url : `/${url}`, baseUrl);
+        }
+        
+        // Vérifier si l'URL contient un paramètre callbackUrl
+        const callbackUrl = urlObj.searchParams.get("callbackUrl");
+        if (callbackUrl) {
+          console.log("🔧 [Auth] CallbackUrl trouvé dans les paramètres:", callbackUrl);
+          // Si le callbackUrl est relatif, le construire avec baseUrl
+          if (callbackUrl.startsWith("/")) {
+            const redirectUrl = `${baseUrl}${callbackUrl}`;
+            console.log("🔧 [Auth] Redirection vers callbackUrl:", redirectUrl);
+            return redirectUrl;
+          }
+          // Si c'est une URL complète du même domaine, l'utiliser
+          try {
+            const callbackUrlObj = new URL(callbackUrl);
+            if (callbackUrlObj.origin === baseUrl) {
+              console.log("🔧 [Auth] Redirection vers callbackUrl (même domaine):", callbackUrl);
+              return callbackUrl;
+            }
+          } catch (e) {
+            // callbackUrl invalide, continuer
+          }
+        }
+        
+        // Si l'URL est du même domaine que baseUrl, l'utiliser
+        if (urlObj.origin === baseUrl) {
+          console.log("🔧 [Auth] Redirection vers (même domaine):", urlObj.href);
+          return urlObj.href;
+        }
+        
+        // Si l'URL est relative, la construire avec baseUrl
+        if (url.startsWith("/")) {
+          const fullUrl = `${baseUrl}${url}`;
+          console.log("🔧 [Auth] Redirection vers (relative):", fullUrl);
+          return fullUrl;
+        }
+      } catch (e) {
+        console.error("🔧 [Auth] Erreur lors du parsing de l'URL:", e);
+      }
+      
+      // Par défaut, rediriger vers le dashboard
+      console.log("🔧 [Auth] Redirection par défaut vers dashboard");
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {
