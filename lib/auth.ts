@@ -2,11 +2,17 @@ import AzureADProvider from "next-auth/providers/azure-ad";
 import type { NextAuthOptions } from "next-auth";
 
 console.log("🔧 [Auth] Configuration NextAuth chargée");
+console.log("🔧 [Auth] NODE_ENV:", process.env.NODE_ENV);
 console.log("🔧 [Auth] NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "✅ Présent" : "❌ Manquant");
-console.log("🔧 [Auth] NEXTAUTH_URL:", process.env.NEXTAUTH_URL ? "✅ Présent" : "❌ Manquant");
+console.log("🔧 [Auth] NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_CLIENT_ID:", process.env.AZURE_AD_CLIENT_ID ? "✅ Présent" : "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_CLIENT_SECRET:", process.env.AZURE_AD_CLIENT_SECRET ? "✅ Présent" : "❌ Manquant");
 console.log("🔧 [Auth] AZURE_AD_TENANT_ID:", process.env.AZURE_AD_TENANT_ID ? "✅ Présent" : "❌ Manquant");
+
+// Vérifier la configuration des cookies
+const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
+console.log("🔧 [Auth] Production mode:", isProduction);
+console.log("🔧 [Auth] Secure cookies:", isProduction);
 
 export const authOptions: NextAuthOptions = {
         providers: [
@@ -146,8 +152,9 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "CCDtuslb47m68jql1f17EXGvn7H/6TAkiRz0kayQOTw=",
   debug: true,
-  // Ajouter des options supplémentaires pour résoudre le problème de secret
-  useSecureCookies: false,
+  // Détecter si on est en production (HTTPS) ou en développement (HTTP)
+  // En production, les cookies doivent être sécurisés pour fonctionner avec HTTPS
+  useSecureCookies: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -155,7 +162,26 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false
+        // En production avec HTTPS, secure doit être true
+        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://')
+      }
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://')
+      }
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://')
       }
     }
   }
