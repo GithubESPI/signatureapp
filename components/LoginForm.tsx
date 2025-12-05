@@ -30,10 +30,16 @@ export default function LoginForm() {
           // Si c'est une URL complète, extraire le chemin
           if (callbackUrlParam.startsWith("http")) {
             const url = new URL(callbackUrlParam);
-            redirectUrl = url.pathname + url.search;
+            const path = url.pathname + url.search;
+            // Ignorer si c'est /login pour éviter les boucles
+            if (!path.includes("/login")) {
+              redirectUrl = path;
+            }
           } else {
-            // Si c'est un chemin relatif, l'utiliser directement
-            redirectUrl = callbackUrlParam.startsWith("/") ? callbackUrlParam : `/${callbackUrlParam}`;
+            // Si c'est un chemin relatif, l'utiliser directement (sauf si c'est /login)
+            if (!callbackUrlParam.includes("/login")) {
+              redirectUrl = callbackUrlParam.startsWith("/") ? callbackUrlParam : `/${callbackUrlParam}`;
+            }
           }
         } catch (e) {
           console.error("🔧 [LoginForm] Erreur lors du parsing du callbackUrl:", e);
@@ -43,10 +49,11 @@ export default function LoginForm() {
       
       console.log("🔧 [LoginForm] Redirection vers:", redirectUrl);
       
-      // Utiliser window.location pour forcer une redirection complète et éviter les boucles
+      // Utiliser window.location.replace pour éviter d'ajouter une entrée dans l'historique
+      // et forcer une redirection complète pour éviter les boucles
       setTimeout(() => {
-        window.location.href = redirectUrl;
-      }, 100);
+        window.location.replace(redirectUrl);
+      }, 50);
     }
   }, [isHydrated, status, session, searchParams]);
 

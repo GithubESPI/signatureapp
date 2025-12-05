@@ -47,14 +47,15 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log("🔧 [Auth] Redirection:", { url, baseUrl });
       
-      // Si l'URL est déjà le dashboard, la retourner directement
-      if (url === `${baseUrl}/dashboard` || url === "/dashboard") {
-        console.log("🔧 [Auth] Redirection directe vers dashboard");
+      // RÈGLE ABSOLUE: Si l'URL contient /login, TOUJOURS rediriger vers /dashboard
+      // Cela évite toute boucle de redirection
+      if (url.includes("/login")) {
+        console.log("🔧 [Auth] URL contient /login, redirection FORCÉE vers dashboard");
         return `${baseUrl}/dashboard`;
       }
       
       try {
-        // Si l'URL est une URL complète, essayer de l'analyser
+        // Construire l'URL complète pour l'analyser
         let urlObj: URL;
         if (url.startsWith("http://") || url.startsWith("https://")) {
           urlObj = new URL(url);
@@ -63,7 +64,7 @@ export const authOptions: NextAuthOptions = {
           urlObj = new URL(url.startsWith("/") ? url : `/${url}`, baseUrl);
         }
         
-        // Vérifier si l'URL contient un paramètre callbackUrl
+        // PRIORITÉ 1: Extraire le callbackUrl depuis les paramètres de requête
         const callbackUrl = urlObj.searchParams.get("callbackUrl");
         if (callbackUrl) {
           console.log("🔧 [Auth] CallbackUrl trouvé dans les paramètres:", callbackUrl);
@@ -71,6 +72,12 @@ export const authOptions: NextAuthOptions = {
           try {
             // Décoder le callbackUrl s'il est encodé
             const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+            
+            // Ignorer complètement si c'est /login
+            if (decodedCallbackUrl.includes("/login")) {
+              console.log("🔧 [Auth] CallbackUrl pointe vers /login, redirection vers dashboard");
+              return `${baseUrl}/dashboard`;
+            }
             
             // Si le callbackUrl est relatif, le construire avec baseUrl
             if (decodedCallbackUrl.startsWith("/")) {
@@ -82,27 +89,41 @@ export const authOptions: NextAuthOptions = {
             // Si c'est une URL complète du même domaine, extraire le chemin
             const callbackUrlObj = new URL(decodedCallbackUrl);
             if (callbackUrlObj.origin === baseUrl) {
-              const redirectUrl = callbackUrlObj.pathname + callbackUrlObj.search;
-              console.log("🔧 [Auth] Redirection vers callbackUrl (même domaine):", redirectUrl);
-              return `${baseUrl}${redirectUrl}`;
+              const path = callbackUrlObj.pathname + callbackUrlObj.search;
+              // Ignorer si c'est /login
+              if (path.includes("/login")) {
+                console.log("🔧 [Auth] CallbackUrl pointe vers /login, redirection vers dashboard");
+                return `${baseUrl}/dashboard`;
+              }
+              console.log("🔧 [Auth] Redirection vers callbackUrl (même domaine):", path);
+              return `${baseUrl}${path}`;
             }
           } catch (e) {
             console.error("🔧 [Auth] Erreur lors du parsing du callbackUrl:", e);
           }
         }
         
-        // Si l'URL est du même domaine que baseUrl, extraire le chemin
-        if (urlObj.origin === baseUrl) {
-          const path = urlObj.pathname + urlObj.search;
-          // Éviter de rediriger vers /login si on vient de se connecter
-          if (path !== "/login" && path !== "/login/") {
-            console.log("🔧 [Auth] Redirection vers (même domaine):", `${baseUrl}${path}`);
-            return `${baseUrl}${path}`;
-          }
+        // PRIORITÉ 2: Si l'URL est déjà le dashboard, la retourner directement
+        const pathname = urlObj.pathname;
+        if (pathname === "/dashboard" || url === `${baseUrl}/dashboard` || url === "/dashboard") {
+          console.log("🔧 [Auth] Redirection directe vers dashboard");
+          return `${baseUrl}/dashboard`;
         }
         
-        // Si l'URL est relative et n'est pas /login, l'utiliser
-        if (url.startsWith("/") && url !== "/login" && url !== "/login/") {
+        // PRIORITÉ 3: Si l'URL est du même domaine que baseUrl, extraire le chemin
+        if (urlObj.origin === baseUrl) {
+          const path = urlObj.pathname + urlObj.search;
+          // Toujours éviter /login
+          if (path.includes("/login")) {
+            console.log("🔧 [Auth] Path contient /login, redirection vers dashboard");
+            return `${baseUrl}/dashboard`;
+          }
+          console.log("🔧 [Auth] Redirection vers (même domaine):", `${baseUrl}${path}`);
+          return `${baseUrl}${path}`;
+        }
+        
+        // PRIORITÉ 4: Si l'URL est relative et n'est pas /login, l'utiliser
+        if (url.startsWith("/") && !url.includes("/login")) {
           const fullUrl = `${baseUrl}${url}`;
           console.log("🔧 [Auth] Redirection vers (relative):", fullUrl);
           return fullUrl;
