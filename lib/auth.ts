@@ -47,6 +47,12 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log("🔧 [Auth] Redirection:", { url, baseUrl });
       
+      // Si l'URL est déjà le dashboard, la retourner directement
+      if (url === `${baseUrl}/dashboard` || url === "/dashboard") {
+        console.log("🔧 [Auth] Redirection directe vers dashboard");
+        return `${baseUrl}/dashboard`;
+      }
+      
       try {
         // Si l'URL est une URL complète, essayer de l'analyser
         let urlObj: URL;
@@ -61,32 +67,42 @@ export const authOptions: NextAuthOptions = {
         const callbackUrl = urlObj.searchParams.get("callbackUrl");
         if (callbackUrl) {
           console.log("🔧 [Auth] CallbackUrl trouvé dans les paramètres:", callbackUrl);
-          // Si le callbackUrl est relatif, le construire avec baseUrl
-          if (callbackUrl.startsWith("/")) {
-            const redirectUrl = `${baseUrl}${callbackUrl}`;
-            console.log("🔧 [Auth] Redirection vers callbackUrl:", redirectUrl);
-            return redirectUrl;
-          }
-          // Si c'est une URL complète du même domaine, l'utiliser
+          
           try {
-            const callbackUrlObj = new URL(callbackUrl);
+            // Décoder le callbackUrl s'il est encodé
+            const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+            
+            // Si le callbackUrl est relatif, le construire avec baseUrl
+            if (decodedCallbackUrl.startsWith("/")) {
+              const redirectUrl = `${baseUrl}${decodedCallbackUrl}`;
+              console.log("🔧 [Auth] Redirection vers callbackUrl (relatif):", redirectUrl);
+              return redirectUrl;
+            }
+            
+            // Si c'est une URL complète du même domaine, extraire le chemin
+            const callbackUrlObj = new URL(decodedCallbackUrl);
             if (callbackUrlObj.origin === baseUrl) {
-              console.log("🔧 [Auth] Redirection vers callbackUrl (même domaine):", callbackUrl);
-              return callbackUrl;
+              const redirectUrl = callbackUrlObj.pathname + callbackUrlObj.search;
+              console.log("🔧 [Auth] Redirection vers callbackUrl (même domaine):", redirectUrl);
+              return `${baseUrl}${redirectUrl}`;
             }
           } catch (e) {
-            // callbackUrl invalide, continuer
+            console.error("🔧 [Auth] Erreur lors du parsing du callbackUrl:", e);
           }
         }
         
-        // Si l'URL est du même domaine que baseUrl, l'utiliser
+        // Si l'URL est du même domaine que baseUrl, extraire le chemin
         if (urlObj.origin === baseUrl) {
-          console.log("🔧 [Auth] Redirection vers (même domaine):", urlObj.href);
-          return urlObj.href;
+          const path = urlObj.pathname + urlObj.search;
+          // Éviter de rediriger vers /login si on vient de se connecter
+          if (path !== "/login" && path !== "/login/") {
+            console.log("🔧 [Auth] Redirection vers (même domaine):", `${baseUrl}${path}`);
+            return `${baseUrl}${path}`;
+          }
         }
         
-        // Si l'URL est relative, la construire avec baseUrl
-        if (url.startsWith("/")) {
+        // Si l'URL est relative et n'est pas /login, l'utiliser
+        if (url.startsWith("/") && url !== "/login" && url !== "/login/") {
           const fullUrl = `${baseUrl}${url}`;
           console.log("🔧 [Auth] Redirection vers (relative):", fullUrl);
           return fullUrl;

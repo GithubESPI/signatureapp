@@ -1,13 +1,15 @@
 "use client";
 
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 
 export default function LoginForm() {
   const [isHydrated, setIsHydrated] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -15,11 +17,38 @@ export default function LoginForm() {
 
   // Rediriger vers le dashboard si l'utilisateur est déjà connecté
   useEffect(() => {
-    if (isHydrated && status === "authenticated" && session) {
+    if (isHydrated && status === "authenticated" && session && !hasRedirected.current) {
+      hasRedirected.current = true;
       console.log("🔧 [LoginForm] Utilisateur déjà connecté, redirection vers dashboard");
-      router.push("/dashboard");
+      
+      // Récupérer le callbackUrl depuis les paramètres de l'URL ou utiliser /dashboard par défaut
+      const callbackUrlParam = searchParams.get("callbackUrl");
+      let redirectUrl = "/dashboard";
+      
+      if (callbackUrlParam) {
+        try {
+          // Si c'est une URL complète, extraire le chemin
+          if (callbackUrlParam.startsWith("http")) {
+            const url = new URL(callbackUrlParam);
+            redirectUrl = url.pathname + url.search;
+          } else {
+            // Si c'est un chemin relatif, l'utiliser directement
+            redirectUrl = callbackUrlParam.startsWith("/") ? callbackUrlParam : `/${callbackUrlParam}`;
+          }
+        } catch (e) {
+          console.error("🔧 [LoginForm] Erreur lors du parsing du callbackUrl:", e);
+          redirectUrl = "/dashboard";
+        }
+      }
+      
+      console.log("🔧 [LoginForm] Redirection vers:", redirectUrl);
+      
+      // Utiliser window.location pour forcer une redirection complète et éviter les boucles
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 100);
     }
-  }, [isHydrated, status, session, router]);
+  }, [isHydrated, status, session, searchParams]);
 
   const handleAzureLogin = () => {
     console.log("🔧 [LoginForm] Tentative de connexion Azure AD...");
