@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
     console.log("🔧 [Generate Signature] Données:", userData);
 
     // Préparer les données utilisateur
+    // Nettoyer les virgules des adresses
+    const cleanAdresse = (userData.adresse || '').replace(/,/g, '').trim();
+    const cleanVille = (userData.ville || '').replace(/,/g, '').trim();
+    const cleanCodePostal = (userData.codePostal || '').replace(/,/g, '').trim();
+    
     const userDataFormatted: UserData = {
       prenom: userData.prenom || session.user.name?.split(' ')[0] || '',
       nom: userData.nom || session.user.name?.split(' ').slice(1).join(' ') || '',
@@ -36,9 +41,9 @@ export async function POST(request: NextRequest) {
       telephone: userData.telephone || '',
       indicatifPays: userData.indicatifPays || '',
       adresseId: userData.adresseId || '',
-      adresse: userData.adresse || '',
-      ville: userData.ville || '',
-      codePostal: userData.codePostal || '',
+      adresse: cleanAdresse,
+      ville: cleanVille,
+      codePostal: cleanCodePostal,
       email: userData.email || session.user.email || ''
     };
 

@@ -32,8 +32,13 @@ export class WordTemplateProcessor {
       console.log("✅ [TemplateProcessor] Template récupéré, taille:", templateBuffer.length, "bytes");
       
       // Préparer les données pour le template
+      // Nettoyer les virgules des valeurs individuelles
+      const cleanAdresse = (userData.adresse || '').replace(/,/g, '').trim();
+      const cleanCodePostal = (userData.codePostal || '').replace(/,/g, '').trim();
+      const cleanVille = (userData.ville || '').replace(/,/g, '').trim();
+      
       // Formater l'adresse complète sans virgules
-      const adresseComplete = [userData.adresse, userData.codePostal, userData.ville]
+      const adresseComplete = [cleanAdresse, cleanCodePostal, cleanVille]
         .filter(Boolean)
         .join(' ');
       
@@ -43,9 +48,9 @@ export class WordTemplateProcessor {
         nomComplet: `${userData.prenom} ${userData.nom}`,
         fonction: userData.fonction,
         telephone: userData.telephone,
-        adresse: userData.adresse,
-        codePostal: userData.codePostal,
-        ville: userData.ville,
+        adresse: cleanAdresse,
+        codePostal: cleanCodePostal,
+        ville: cleanVille,
         adresseComplete: adresseComplete,
         email: userData.email,
         siteWeb: "www.groupe-espi.fr",
@@ -64,7 +69,10 @@ export class WordTemplateProcessor {
           formatPhone: (phone: string) => phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5'),
           formatAddress: (address: string, city: string) => `${address} ${city}`,
           formatFullAddress: (address: string, codePostal: string, city: string) => {
-            return [address, codePostal, city].filter(Boolean).join(' ');
+            const cleanAddr = (address || '').replace(/,/g, '').trim();
+            const cleanCP = (codePostal || '').replace(/,/g, '').trim();
+            const cleanCity = (city || '').replace(/,/g, '').trim();
+            return [cleanAddr, cleanCP, cleanCity].filter(Boolean).join(' ');
           },
           getInitials: (prenom: string, nom: string) => `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase()
         }

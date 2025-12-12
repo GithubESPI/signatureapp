@@ -38,11 +38,16 @@ export class SignatureConverter {
     } = data;
 
     const fullName = `${prenom} ${nom}`;
-    const fullAddress = adresse && codePostal && ville 
-      ? `${adresse} ${codePostal} ${ville}` 
-      : adresse && ville 
-        ? `${adresse} ${ville}` 
-        : ville;
+    // Nettoyer les virgules des valeurs individuelles
+    const cleanAdresse = (adresse || '').replace(/,/g, '').trim();
+    const cleanCodePostal = (codePostal || '').replace(/,/g, '').trim();
+    const cleanVille = (ville || '').replace(/,/g, '').trim();
+    
+    const fullAddress = cleanAdresse && cleanCodePostal && cleanVille 
+      ? `${cleanAdresse} ${cleanCodePostal} ${cleanVille}` 
+      : cleanAdresse && cleanVille 
+        ? `${cleanAdresse} ${cleanVille}` 
+        : cleanVille;
 
     return `
 <!DOCTYPE html>
@@ -130,7 +135,11 @@ export class SignatureConverter {
     } = data;
 
     const fullName = `${prenom} ${nom}`;
-    const fullAddress = adresse ? `${adresse} ${ville}` : ville;
+    // Nettoyer les virgules des valeurs individuelles
+    const cleanAdresse = (adresse || '').replace(/,/g, '').trim();
+    const cleanVille = (ville || '').replace(/,/g, '').trim();
+    
+    const fullAddress = cleanAdresse ? `${cleanAdresse} ${cleanVille}` : cleanVille;
 
     return `
 ${fullName}

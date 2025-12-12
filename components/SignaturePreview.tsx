@@ -111,9 +111,9 @@ export default function SignaturePreview({ userData, className = "" }: Signature
                   style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
                 >
                   {[
-                    userData.adresse,
-                    userData.codePostal,
-                    userData.ville
+                    userData.adresse?.replace(/,/g, '')?.trim(),
+                    userData.codePostal?.replace(/,/g, '')?.trim(),
+                    userData.ville?.replace(/,/g, '')?.trim()
                   ].filter(Boolean).join(' ')}
                 </p>
               </div>
