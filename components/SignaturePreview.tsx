@@ -114,7 +114,7 @@ export default function SignaturePreview({ userData, className = "" }: Signature
                     userData.adresse,
                     userData.codePostal,
                     userData.ville
-                  ].filter(Boolean).join(', ')}
+                  ].filter(Boolean).join(' ')}
                 </p>
               </div>
             )}

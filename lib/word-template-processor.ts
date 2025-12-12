@@ -32,6 +32,11 @@ export class WordTemplateProcessor {
       console.log("✅ [TemplateProcessor] Template récupéré, taille:", templateBuffer.length, "bytes");
       
       // Préparer les données pour le template
+      // Formater l'adresse complète sans virgules
+      const adresseComplete = [userData.adresse, userData.codePostal, userData.ville]
+        .filter(Boolean)
+        .join(' ');
+      
       const templateData = {
         prenom: userData.prenom,
         nom: userData.nom,
@@ -39,7 +44,9 @@ export class WordTemplateProcessor {
         fonction: userData.fonction,
         telephone: userData.telephone,
         adresse: userData.adresse,
+        codePostal: userData.codePostal,
         ville: userData.ville,
+        adresseComplete: adresseComplete,
         email: userData.email,
         siteWeb: "www.groupe-espi.fr",
         tagline: "FORMER À L'IMMOBILIER DE DEMAIN",
@@ -55,7 +62,10 @@ export class WordTemplateProcessor {
         additionalJsContext: {
           // Fonctions utilitaires pour le template
           formatPhone: (phone: string) => phone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5'),
-          formatAddress: (address: string, city: string) => `${address}, ${city}`,
+          formatAddress: (address: string, city: string) => `${address} ${city}`,
+          formatFullAddress: (address: string, codePostal: string, city: string) => {
+            return [address, codePostal, city].filter(Boolean).join(' ');
+          },
           getInitials: (prenom: string, nom: string) => `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase()
         }
       });

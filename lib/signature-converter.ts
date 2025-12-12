@@ -39,9 +39,9 @@ export class SignatureConverter {
 
     const fullName = `${prenom} ${nom}`;
     const fullAddress = adresse && codePostal && ville 
-      ? `${adresse}, ${codePostal} ${ville}` 
+      ? `${adresse} ${codePostal} ${ville}` 
       : adresse && ville 
-        ? `${adresse}, ${ville}` 
+        ? `${adresse} ${ville}` 
         : ville;
 
     return `
@@ -130,7 +130,7 @@ export class SignatureConverter {
     } = data;
 
     const fullName = `${prenom} ${nom}`;
-    const fullAddress = adresse ? `${adresse}, ${ville}` : ville;
+    const fullAddress = adresse ? `${adresse} ${ville}` : ville;
 
     return `
 ${fullName}

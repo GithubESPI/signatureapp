@@ -210,7 +210,7 @@ export default function SignatureGenerator() {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
 
     const fullName = `${prenom} ${nom}`;
-    const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(', ');
+    const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(' ');
 
     // Calculer les positions comme dans le PNG (mêmes dimensions 2200x700)
     const width = 2200;
