@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, FileText, CheckCircle, XCircle, Loader2, Eye, X } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Loader2, Eye, X } from "lucide-react";
 
 interface Template {
   name: string;
@@ -17,7 +17,6 @@ interface WordTemplateManagerProps {
 export default function WordTemplateManager({ onTemplateLoaded, onError }: WordTemplateManagerProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [downloadStatus, setDownloadStatus] = useState<{
     [key: string]: 'idle' | 'downloading' | 'success' | 'error';
   }>({});
@@ -41,11 +40,6 @@ export default function WordTemplateManager({ onTemplateLoaded, onError }: WordT
           name: fileName,
         }));
         setTemplates(templateList);
-        
-        // Sélectionner le premier modèle par défaut
-        if (templateList.length > 0) {
-          setSelectedTemplate(templateList[0].name);
-        }
       }
     } catch (error) {
       console.error("Erreur lors du chargement des modèles:", error);
@@ -79,10 +73,11 @@ export default function WordTemplateManager({ onTemplateLoaded, onError }: WordT
       } else {
         throw new Error('Erreur lors de la lecture');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erreur lors de la lecture:", error);
       setDownloadStatus(prev => ({ ...prev, [templateName]: 'error' }));
-      if(onError) onError(error?.message || 'Erreur inconnue');
+      const errMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if(onError) onError(errMsg);
     }
   };
 

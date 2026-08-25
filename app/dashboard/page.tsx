@@ -4,16 +4,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  User,
-  Mail,
-  Building,
-  Settings,
   FileText,
-  Download,
-  Send,
   LogOut,
   CheckCircle,
-  Clock,
   AlertCircle
 } from "lucide-react";
 import DashboardUserProfile from "@/components/DashboardUserProfile";

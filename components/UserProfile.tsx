@@ -57,6 +57,7 @@ export default function UserProfile() {
     >
       <div className="flex items-center space-x-4 mb-6">
         {session.user?.image ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={session.user.image}
             alt={session.user.name || "User"}

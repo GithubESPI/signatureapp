@@ -1,12 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useGraphProfile } from "@/hooks/useGraphApi";
-import { FileText, Download, Loader2, CheckCircle, XCircle, User, Phone, MapPin, Mail, Briefcase, Send, Eye, Save } from "lucide-react";
-import OutlookSignatureManager from "./OutlookSignatureManager";
+import { 
+  FileText, 
+  Download, 
+  Loader2, 
+  CheckCircle, 
+  XCircle, 
+  User, 
+  Phone, 
+  MapPin, 
+  Mail, 
+  Briefcase, 
+  Send, 
+  Eye, 
+  Save, 
+  Copy, 
+  Sparkles,
+  Building2 
+} from "lucide-react";
 import SignaturePreview from "./SignaturePreview";
-import { SignatureConverter } from "@/lib/signature-converter";
+import EmailSimulator from "./EmailSimulator";
+import ToastNotification, { ToastMessage, ToastType } from "./ToastNotification";
 import html2canvas from "html2canvas";
 
 interface UserData {
@@ -22,23 +39,6 @@ interface UserData {
   email: string;
 }
 
-interface TemplateInfo {
-  placeholders: string[];
-  content: string;
-}
-
-const VILLES_OPTIONS = [
-  'Lyon',
-  'Paris',
-  'Bordeaux',
-  'Levallois',
-  'Marseille',
-  'Montpellier',
-  'Nantes',
-  'Lille',
-  'Canada'
-];
-
 const INDICATIFS_PAYS = [
   { code: 'FR', nom: 'France', indicatif: '+33' },
   { code: 'CA', nom: 'Canada', indicatif: '+1' }
@@ -48,26 +48,18 @@ const INDICATIFS_PAYS = [
 const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
   if (!phone) return '';
 
-  // Nettoyer le numéro (enlever les espaces, tirets, points)
   let cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
 
   if (indicatifPays === 'FR') {
-    // Si le numéro ne commence pas par 0, on l'ajoute (sauf s'il est vide)
     if (cleanPhone.length > 0 && !cleanPhone.startsWith('0')) {
       cleanPhone = '0' + cleanPhone;
     }
-
-    // Format français : XX XX XX XX XX
     return cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
   } else if (indicatifPays === 'CA') {
-    // Retirer le 0 au début si présent pour le Canada (peu probable mais par sécurité)
     if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
-
-    // Format canadien : XXX XXX XXXX (10 chiffres)
     if (cleanPhone.length === 10) {
       return `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
     }
-    // Si le format n'est pas standard, retourner avec espaces
     return cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
   }
 
@@ -82,17 +74,17 @@ const cleanPhoneNumber = (phone: string): string => {
 
 // Base de données des adresses avec villes et codes postaux correspondants
 const ADRESSES_REFERENCE = [
-  { id: "levallois", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
-  { id: "paris", adresse: "23 rue Cronstadt", ville: "PARIS", codePostal: "75015", pays: "FR" },
-  { id: "nantes", adresse: "285 rue Louis de Broglie, CS 62357", ville: "NANTES Cedex 3", codePostal: "44323", pays: "FR" },
-  { id: "marseille-docks", adresse: "Les Docks Village", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
-  { id: "marseille-lazaret", adresse: "20 quai du Lazaret", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
-  { id: "bordeaux", adresse: "73 Av. Thiers", ville: "Bordeaux", codePostal: "33100", pays: "FR" },
-  { id: "lyon", adresse: "95 Rue Marietton", ville: "Lyon", codePostal: "69009", pays: "FR" },
-  { id: "montpellier", adresse: "53 avenue Georges Clémenceau", ville: "Montpellier", codePostal: "34000", pays: "FR" },
-  { id: "lille", adresse: "8 Rue de Tournai", ville: "Lille", codePostal: "59800", pays: "FR" },
-  { id: "montreal", adresse: "507 Place d'Armes local 260", ville: "Montréal", codePostal: "H2Y 2W8", pays: "CA" },
-  { id: "aix", adresse: "10 cours Sextius", ville: "Aix-en-Provence", codePostal: "13800", pays: "FR" }
+  { id: "levallois", label: "Levallois-Perret", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
+  { id: "paris", label: "Paris 15e", adresse: "23 rue Cronstadt", ville: "PARIS", codePostal: "75015", pays: "FR" },
+  { id: "nantes", label: "Nantes", adresse: "285 rue Louis de Broglie, CS 62357", ville: "NANTES Cedex 3", codePostal: "44323", pays: "FR" },
+  { id: "marseille-docks", label: "Marseille Docks", adresse: "Les Docks Village", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
+  { id: "marseille-lazaret", label: "Marseille Lazaret", adresse: "20 quai du Lazaret", ville: "MARSEILLE", codePostal: "13002", pays: "FR" },
+  { id: "bordeaux", label: "Bordeaux", adresse: "73 Av. Thiers", ville: "Bordeaux", codePostal: "33100", pays: "FR" },
+  { id: "lyon", label: "Lyon 9e", adresse: "95 Rue Marietton", ville: "Lyon", codePostal: "69009", pays: "FR" },
+  { id: "montpellier", label: "Montpellier", adresse: "53 avenue Georges Clémenceau", ville: "Montpellier", codePostal: "34000", pays: "FR" },
+  { id: "lille", label: "Lille", adresse: "8 Rue de Tournai", ville: "Lille", codePostal: "59800", pays: "FR" },
+  { id: "montreal", label: "Montréal (CA)", adresse: "507 Place d'Armes local 260", ville: "Montréal", codePostal: "H2Y 2W8", pays: "CA" },
+  { id: "aix", label: "Aix-en-Provence", adresse: "10 cours Sextius", ville: "Aix-en-Provence", codePostal: "13800", pays: "FR" }
 ];
 
 export default function SignatureGenerator() {
@@ -110,25 +102,30 @@ export default function SignatureGenerator() {
     codePostal: '',
     email: ''
   });
-  const [templateInfo, setTemplateInfo] = useState<TemplateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [signatureHtml, setSignatureHtml] = useState<string>('');
-  const [showOutlookManager, setShowOutlookManager] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [detectionMessage, setDetectionMessage] = useState<string>('');
   const [isBuildingSignature, setIsBuildingSignature] = useState(false);
+  const [buildProgress, setBuildProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [buildProgress, setBuildProgress] = useState(0);
+  const [isCopiedHtml, setIsCopiedHtml] = useState(false);
+  const [previewTab, setPreviewTab] = useState<"simulator" | "direct">("simulator");
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
   const previewRef = useRef<HTMLDivElement>(null);
   const hiddenPreviewRef = useRef<HTMLDivElement>(null);
 
-  // Charger les informations du template au montage
-  useEffect(() => {
-    loadTemplateInfo();
+  const addToast = useCallback((type: ToastType, title: string, message?: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, type, title, message }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
   // Charger le profil utilisateur
@@ -138,42 +135,66 @@ export default function SignatureGenerator() {
     }
   }, [session, fetchProfile]);
 
-  // Pré-remplir avec les données de session et profil
+  // Pré-remplir avec les données de session et profil Microsoft + Auto-détection du campus
   useEffect(() => {
     if (session?.user) {
       const nameParts = session.user.name?.split(' ') || [];
+      const userPrenom = nameParts[0] || '';
+      const userNom = nameParts.slice(1).join(' ') || '';
+      const userEmail = session.user?.email || '';
+      const userFonction = profile?.jobTitle || '';
+      const userPhone = profile?.mobilePhone || '';
+
+      // Tenter d'auto-détecter le campus depuis officeLocation, department ou city
+      const defaultAddress = ADRESSES_REFERENCE[1] || ADRESSES_REFERENCE[0]; // Défaut Paris
+      let matchedAddress = defaultAddress;
+      const locText = `${profile?.officeLocation || ''} ${profile?.department || ''}`.toLowerCase();
+      
+      if (locText) {
+        const found = ADRESSES_REFERENCE.find(addr => 
+          locText.includes(addr.id) || 
+          locText.includes(addr.ville.toLowerCase()) ||
+          locText.includes(addr.label.toLowerCase())
+        );
+        if (found) {
+          matchedAddress = found;
+          setDetectionMessage(`✨ Campus ESPI ${found.label} auto-détecté depuis votre profil Microsoft`);
+        }
+      }
+
       setUserData(prev => ({
         ...prev,
-        prenom: nameParts[0] || '',
-        nom: nameParts.slice(1).join(' ') || '',
-        email: session.user?.email || '',
-        // Pré-remplir avec les données du profil Microsoft Graph
-        fonction: profile?.jobTitle || '',
-        telephone: profile?.mobilePhone || '',
-        adresse: '',
-        ville: 'Paris'
+        prenom: userPrenom,
+        nom: userNom,
+        email: userEmail,
+        fonction: userFonction || prev.fonction,
+        telephone: userPhone || prev.telephone,
+        adresseId: matchedAddress.id,
+        adresse: matchedAddress.adresse,
+        ville: matchedAddress.ville,
+        codePostal: matchedAddress.codePostal,
+        indicatifPays: matchedAddress.pays
       }));
     }
   }, [session, profile]);
 
-  const loadTemplateInfo = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/generate-signature?template=model_signature.docx');
-      const data = await response.json();
-
-      if (data.success) {
-        setTemplateInfo(data);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des informations du template:", error);
-    } finally {
-      setIsLoading(false);
+  const selectCampus = (campusId: string) => {
+    const adresseSelectionnee = ADRESSES_REFERENCE.find(addr => addr.id === campusId);
+    if (adresseSelectionnee) {
+      setUserData(prev => ({
+        ...prev,
+        adresseId: adresseSelectionnee.id,
+        adresse: adresseSelectionnee.adresse,
+        ville: adresseSelectionnee.ville,
+        codePostal: adresseSelectionnee.codePostal,
+        indicatifPays: adresseSelectionnee.pays
+      }));
+      setDetectionMessage(`📍 Campus sélectionné : ${adresseSelectionnee.label}`);
+      addToast("info", `Campus ${adresseSelectionnee.label}`, `${adresseSelectionnee.adresse}, ${adresseSelectionnee.ville}`);
     }
   };
 
   const handleInputChange = (field: keyof UserData, value: string) => {
-    // Pour le téléphone, formater avec des espaces à l'affichage mais stocker sans espaces
     if (field === 'telephone') {
       const cleanedValue = cleanPhoneNumber(value);
       setUserData(prev => ({
@@ -187,55 +208,32 @@ export default function SignatureGenerator() {
       }));
     }
 
-    // Gestion automatique de la sélection d'adresse
     if (field === 'adresseId' && value) {
-      const adresseSelectionnee = ADRESSES_REFERENCE.find(addr => addr.id === value);
-      if (adresseSelectionnee) {
-        setUserData(prev => ({
-          ...prev,
-          adresse: adresseSelectionnee.adresse,
-          ville: adresseSelectionnee.ville,
-          codePostal: adresseSelectionnee.codePostal,
-          indicatifPays: adresseSelectionnee.pays
-        }));
-        setDetectionMessage(`✅ Adresse sélectionnée: ${adresseSelectionnee.ville} (${adresseSelectionnee.codePostal})`);
-        // Effacer le message après 3 secondes
-        setTimeout(() => setDetectionMessage(''), 3000);
-      }
+      selectCampus(value);
     }
   };
 
-
-  const generatePreviewHtml = () => {
+  const generateOutlookHtml = () => {
     const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
 
     const fullName = `${prenom} ${nom}`;
-    // Nettoyer les virgules des valeurs individuelles avant de les joindre
     const cleanAdresse = adresse?.replace(/,/g, '')?.trim() || '';
     const cleanCodePostal = codePostal?.replace(/,/g, '')?.trim() || '';
     const cleanVille = ville?.replace(/,/g, '')?.trim() || '';
     const fullAddress = [cleanAdresse, cleanCodePostal, cleanVille].filter(Boolean).join(' ');
 
-    // Calculer les positions comme dans le PNG (mêmes dimensions 2200x700)
-    const width = 2200;
-    const height = 700;
-    const leftMargin = 1550; // Position ajustée vers la droite (environ 61%)
-
-    // Formater le téléphone avec 0 et espaces réduits
     let phoneDisplay = '';
     if (telephone) {
       const cleanPhone = telephone.replace(/\s/g, '').replace(/[-.]/g, '');
       let formattedPhone = '';
 
       if (indicatifPays === 'FR') {
-        // Format français avec 0 : 0X XX XX XX XX
         if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
           formattedPhone = `${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8)}`;
         } else {
           formattedPhone = cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
         }
       } else if (indicatifPays === 'CA') {
-        // Format canadien : XXX XXX XXXX
         if (cleanPhone.length === 10) {
           formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
         } else {
@@ -250,117 +248,59 @@ export default function SignatureGenerator() {
     }
 
     return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Signature ESPI</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #333333; line-height: 1.4; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 12px 18px; background-color: #2c5aa0; color: #ffffff; border-radius: 6px 6px 0 0;" colspan="2">
+      <div style="font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">ESPI</div>
+      <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">FORMER À L'IMMOBILIER DE DEMAIN</div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 16px 18px; background-color: #f8fafc; border-left: 4px solid #2c5aa0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+      <div style="font-size: 16px; font-weight: bold; color: #1e3a8a; margin-bottom: 4px;">${fullName}</div>
+      ${fonction ? `<div style="font-size: 13px; color: #475569; font-weight: 500; margin-bottom: 10px;">${fonction}</div>` : ''}
+      
+      ${phoneDisplay ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">📞 <a href="tel:${telephone}" style="color: #2c5aa0; text-decoration: none; font-weight: 500;">${phoneDisplay}</a></div>` : ''}
+      ${fullAddress ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">📍 ${fullAddress}</div>` : ''}
+      ${email ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">✉️ <a href="mailto:${email}" style="color: #2c5aa0; text-decoration: none;">${email}</a></div>` : ''}
+      <div style="font-size: 12px; color: #334155;">🌐 <a href="https://www.groupe-espi.fr" target="_blank" style="color: #2c5aa0; text-decoration: none; font-weight: bold;">www.groupe-espi.fr</a></div>
+    </td>
+  </tr>
+</table>
+`.trim();
+  };
+
+  const generatePlainText = () => {
+    const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+    const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(' ');
+    return `${prenom} ${nom}\n${fonction}\nTél: ${telephone}\nAdresse: ${fullAddress}\nEmail: ${email}\nWeb: www.groupe-espi.fr`;
+  };
+
+  const copySignatureHtmlToClipboard = async () => {
+    try {
+      const htmlContent = generateOutlookHtml();
+      const plainText = generatePlainText();
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        const htmlBlob = new Blob([htmlContent], { type: "text/html" });
+        const textBlob = new Blob([plainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": htmlBlob,
+            "text/plain": textBlob,
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(htmlContent);
+      }
+
+      setIsCopiedHtml(true);
+      addToast("success", "Signature copiée !", "La signature HTML pour Outlook a été copiée dans votre presse-papier.");
+      setTimeout(() => setIsCopiedHtml(false), 3000);
+    } catch (err) {
+      console.error("Erreur de copie dans le presse-papier:", err);
+      addToast("error", "Erreur lors de la copie", "Impossible d'accéder au presse-papier. Veuillez réessayer.");
     }
-    
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
-    }
-    
-    .signature-container {
-      width: ${width}px;
-      height: ${height}px;
-      position: relative;
-      background-image: url('/images/model-signature.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      overflow: hidden;
-    }
-    
-    .signature-content {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-    }
-    
-    .right-section {
-      position: absolute;
-      left: ${leftMargin}px;
-      top: 130px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      color: white;
-    }
-    
-    .name {
-      font-size: 48px;
-      font-weight: 600;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      margin-bottom: 70px;
-      line-height: 1;
-    }
-    
-    .function {
-      font-size: 36px;
-      font-weight: 500;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      margin-bottom: 65px;
-      line-height: 1;
-    }
-    
-    .contact-info {
-      font-size: 34px;
-      font-weight: 400;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      margin-bottom: 65px;
-      line-height: 1;
-    }
-    
-    .website {
-      font-size: 34px;
-      font-weight: 400;
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      line-height: 1;
-    }
-    
-    .website a {
-      color: white;
-      text-decoration: none;
-    }
-    
-    .website a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="signature-container">
-    <div class="signature-content">
-      <!-- Section droite - Informations utilisateur (alignée comme le PNG) -->
-      <div class="right-section">
-        <div class="name">${fullName}</div>
-        ${fonction ? `<div class="function">${fonction}</div>` : ''}
-        ${telephone ? `<div class="contact-info">${phoneDisplay}</div>` : ''}
-        ${fullAddress ? `<div class="contact-info">${fullAddress}</div>` : ''}
-        <div class="website"><a href="https://www.groupe-espi.fr">www.groupe-espi.fr</a></div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
   };
 
   const generateSignature = async () => {
@@ -370,29 +310,24 @@ export default function SignatureGenerator() {
     setBuildProgress(0);
 
     try {
-      // Animation de construction de la signature
       const buildSteps = [
         { progress: 20, message: "Préparation des données..." },
-        { progress: 40, message: "Construction du design..." },
-        { progress: 60, message: "Application des styles..." },
+        { progress: 50, message: "Construction du design ESPI..." },
         { progress: 80, message: "Finalisation de la signature..." },
         { progress: 100, message: "Signature prête !" }
       ];
 
       for (const step of buildSteps) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
         setBuildProgress(step.progress);
       }
 
-      // Générer la signature HTML basée sur la prévisualisation
-      const signatureHtml = generatePreviewHtml();
-      setSignatureHtml(signatureHtml);
-      setShowOutlookManager(true);
-
       setGenerationStatus('success');
+      addToast("success", "Signature générée !", "Votre signature est disponible pour le téléchargement PNG ou la copie HTML.");
     } catch (error) {
       console.error("Erreur lors de la génération:", error);
       setGenerationStatus('error');
+      addToast("error", "Erreur de génération", "Impossible de générer la signature. Vérifiez vos données.");
     } finally {
       setIsGenerating(false);
       setIsBuildingSignature(false);
@@ -401,17 +336,16 @@ export default function SignatureGenerator() {
 
   const downloadSignature = async () => {
     if (!hiddenPreviewRef.current) {
-      alert("Erreur lors de la génération de l'image.");
+      addToast("error", "Erreur", "Génération de l'image impossible.");
       return;
     }
 
     setIsDownloading(true);
     try {
-      // Attendre un court instant pour s'assurer que le rendu est terminé
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(hiddenPreviewRef.current, {
-        scale: 1, // Échelle 1 car le conteneur a déjà la bonne taille (2200px)
+        scale: 1,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
@@ -419,17 +353,8 @@ export default function SignatureGenerator() {
         height: 700,
         windowWidth: 2200,
         windowHeight: 700,
-        onclone: (clonedDoc) => {
-          // S'assurer que les éléments sont visibles dans le clone
-          const element = clonedDoc.querySelector('[data-hidden-preview]') as HTMLElement;
-          if (element) {
-            element.style.display = 'block';
-            element.style.visibility = 'visible';
-          }
-        }
       });
 
-      // Convertir en PNG et télécharger
       canvas.toBlob(async (blob) => {
         if (blob) {
           const url = window.URL.createObjectURL(blob);
@@ -439,30 +364,28 @@ export default function SignatureGenerator() {
           document.body.appendChild(a);
           a.click();
 
-          // Nettoyer
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+
+          addToast("success", "Image PNG téléchargée !", "Fichier enregistré dans vos téléchargements.");
 
           // Envoyer automatiquement par email
           await sendSignatureByEmail(canvas.toDataURL('image/png'));
         }
       }, 'image/png', 1.0);
     } catch (error) {
-      console.error('Erreur lors de la génération PNG avec html2canvas:', error);
-      alert('Erreur lors de la génération de l\'image. Veuillez réessayer.');
+      console.error('Erreur lors de la génération PNG:', error);
+      addToast("error", "Erreur lors du téléchargement PNG", "La création du fichier image a échoué.");
     } finally {
       setIsDownloading(false);
     }
   };
 
-  // Fonction pour envoyer la signature par email
   const sendSignatureByEmail = async (signatureImage: string) => {
     setIsSendingEmail(true);
     setEmailSent(false);
 
     const emailToSend = session?.user?.email || userData.email;
-    console.log('📧 Email de destination:', emailToSend);
-    console.log('📧 Session user:', session?.user);
 
     try {
       const response = await fetch('/api/send-signature-email', {
@@ -473,7 +396,8 @@ export default function SignatureGenerator() {
         body: JSON.stringify({
           signatureImage,
           userEmail: emailToSend,
-          userName: `${userData.prenom} ${userData.nom}`
+          userName: `${userData.prenom} ${userData.nom}`,
+          accessToken: (session as { accessToken?: string })?.accessToken
         }),
       });
 
@@ -481,7 +405,7 @@ export default function SignatureGenerator() {
 
       if (result.success) {
         setEmailSent(true);
-        // Réinitialiser l'état après 3 secondes
+        addToast("success", "Email envoyé !", `Signature envoyée à ${emailToSend}`);
         setTimeout(() => {
           setEmailSent(false);
         }, 3000);
@@ -490,30 +414,9 @@ export default function SignatureGenerator() {
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi de l\'email:', error);
-      alert('Erreur lors de l\'envoi de l\'email. Veuillez réessayer.');
+      addToast("error", "Erreur d'envoi email", error instanceof Error ? error.message : 'Échec de l\'envoi');
     } finally {
       setIsSendingEmail(false);
-    }
-  };
-
-  // Fonction pour télécharger la signature en HTML (avec liens cliquables)
-  const downloadSignatureHtml = () => {
-    try {
-      const htmlContent = generatePreviewHtml();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `signature-${userData.prenom}-${userData.nom}.html`;
-      document.body.appendChild(a);
-      a.click();
-
-      // Nettoyer
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erreur lors du téléchargement HTML:', error);
-      alert('Erreur lors du téléchargement du fichier HTML. Veuillez réessayer.');
     }
   };
 
@@ -524,359 +427,306 @@ export default function SignatureGenerator() {
       case 'error':
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
-        return <Download className="w-5 h-5 text-gray-500" />;
+        return <Sparkles className="w-5 h-5 text-blue-500" />;
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100 relative">
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Header Formulaire */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
-          <FileText className="w-6 h-6 text-blue-600 mr-3" />
-          <h3 className="text-xl font-semibold text-gray-800">Générateur de Signature</h3>
+          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-3 text-blue-600">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Générateur de Signature ESPI</h3>
+            <p className="text-sm text-gray-500">Personnalisez votre signature chartée Groupe ESPI</p>
+          </div>
         </div>
+
         {session?.user && (
-          <div className="text-sm text-gray-600 bg-green-50 px-3 py-1 rounded-lg">
-            ✅ Données pré-remplies automatiquement
+          <div className="inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+            <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+            Compte Microsoft connecté
           </div>
         )}
       </div>
 
+      {detectionMessage && (
+        <div className="mb-6 text-sm text-blue-800 bg-blue-50 p-3 rounded-xl border border-blue-200 flex items-center">
+          <Sparkles className="w-4 h-4 mr-2 text-blue-600 shrink-0" />
+          <span>{detectionMessage}</span>
+        </div>
+      )}
+
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
+        <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Chargement du template...</span>
+          <span className="ml-3 text-gray-600 font-medium">Chargement du profil...</span>
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Informations personnelles */}
+          {/* Champs de Saisie */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2" />
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <User className="w-4 h-4 inline mr-1.5 text-gray-400" />
                 Prénom *
-                {session?.user?.name && (
-                  <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                    Auto-rempli
-                  </span>
-                )}
               </label>
               <input
                 type="text"
                 value={userData.prenom}
                 onChange={(e) => handleInputChange('prenom', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
                 placeholder="Votre prénom"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2" />
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <User className="w-4 h-4 inline mr-1.5 text-gray-400" />
                 Nom *
-                {session?.user?.name && (
-                  <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                    Auto-rempli
-                  </span>
-                )}
               </label>
               <input
                 type="text"
                 value={userData.nom}
                 onChange={(e) => handleInputChange('nom', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
                 placeholder="Votre nom"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Briefcase className="w-4 h-4 inline mr-2" />
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <Briefcase className="w-4 h-4 inline mr-1.5 text-gray-400" />
                 Fonction
-                <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                  Pré-rempli
-                </span>
               </label>
               <input
                 type="text"
                 value={userData.fonction}
                 onChange={(e) => handleInputChange('fonction', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder="Votre fonction"
+                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                placeholder="Ex: Directeur de Formation, Enseignant..."
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Indicatif pays
-              </label>
-              <select
-                value={userData.indicatifPays}
-                onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              >
-                {INDICATIFS_PAYS.map((pays) => (
-                  <option key={pays.code} value={pays.code}>
-                    {pays.nom} ({pays.indicatif})
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Pays
+                </label>
+                <select
+                  value={userData.indicatifPays}
+                  onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
+                  className="w-full px-2.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium transition-all"
+                >
+                  {INDICATIFS_PAYS.map((pays) => (
+                    <option key={pays.code} value={pays.code}>
+                      {pays.code} ({pays.indicatif})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <Phone className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                  Téléphone
+                </label>
+                <input
+                  type="tel"
+                  value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
+                  onChange={(e) => handleInputChange('telephone', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                  placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Téléphone
+            {/* Puces / Chips de Sélection Rapide du Campus */}
+            <div className="md:col-span-2 space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                <Building2 className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                Sélection Rapide du Campus ESPI
               </label>
-              <input
-                type="tel"
-                value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
-                onChange={(e) => handleInputChange('telephone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-2" />
-                Adresse de l'entreprise
-              </label>
-              <select
-                value={userData.adresseId}
-                onChange={(e) => handleInputChange('adresseId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              >
-                <option value="">Sélectionnez votre adresse</option>
-                {ADRESSES_REFERENCE.map((adresse) => (
-                  <option key={adresse.id} value={adresse.id}>
-                    {adresse.adresse} - {adresse.ville} ({adresse.codePostal})
-                  </option>
-                ))}
-              </select>
-              {detectionMessage && (
-                <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">
-                  {detectionMessage}
-                </div>
-              )}
-            </div>
-
-            {/* Champs automatiquement remplis - en lecture seule */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-2" />
-                Adresse (automatique)
-              </label>
-              <input
-                type="text"
-                value={userData.adresse}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                placeholder="Sélectionnez une adresse ci-dessus"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-2" />
-                Code postal (automatique)
-              </label>
-              <input
-                type="text"
-                value={userData.codePostal}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                placeholder="Sélectionnez une adresse ci-dessus"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-2" />
-                Ville d'appartenance (automatique)
-              </label>
-              <input
-                type="text"
-                value={userData.ville}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                placeholder="Sélectionnez une adresse ci-dessus"
-              />
+              <div className="flex flex-wrap gap-1.5">
+                {ADRESSES_REFERENCE.map((campus) => {
+                  const isSelected = userData.adresseId === campus.id;
+                  return (
+                    <button
+                      key={campus.id}
+                      type="button"
+                      onClick={() => selectCampus(campus.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 border ${
+                        isSelected
+                          ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                      }`}
+                    >
+                      <MapPin className="w-3 h-3" />
+                      {campus.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Email
-                {session?.user?.email && (
-                  <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                    Auto-rempli
-                  </span>
-                )}
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                Adresse Email Pro
               </label>
               <input
                 type="email"
                 value={userData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                placeholder="Votre email"
+                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                placeholder="prenom.nom@groupe-espi.fr"
               />
             </div>
           </div>
 
-          {/* Boutons d'action */}
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center space-x-2"
-            >
-              <Eye className="w-5 h-5" />
-              <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la signature'}</span>
-            </button>
-
-            {/* Animation de construction de la signature */}
-            {isBuildingSignature && (
-              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">Construction de votre signature</h3>
-                    <div className="w-full bg-blue-200 rounded-full h-3 mb-2">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${buildProgress}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-blue-700">
-                      {buildProgress < 20 && "Préparation des données..."}
-                      {buildProgress >= 20 && buildProgress < 40 && "Construction du design..."}
-                      {buildProgress >= 40 && buildProgress < 60 && "Application des styles..."}
-                      {buildProgress >= 60 && buildProgress < 80 && "Finalisation de la signature..."}
-                      {buildProgress >= 80 && buildProgress < 100 && "Finalisation de la signature..."}
-                      {buildProgress === 100 && "Signature prête !"}
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">{buildProgress}% terminé</p>
-                  </div>
+          {/* Animation de Construction */}
+          {isBuildingSignature && (
+            <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
                 </div>
-              </div>
-            )}
-
-            <button
-              onClick={generateSignature}
-              disabled={isGenerating || !userData.prenom || !userData.nom}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {isGenerating ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                getStatusIcon()
-              )}
-              <span>
-                {isGenerating ? 'Génération...' :
-                  generationStatus === 'success' ? 'Signature générée !' :
-                    generationStatus === 'error' ? 'Erreur de génération' :
-                      'Générer ma signature'}
-              </span>
-            </button>
-
-            {generationStatus === 'success' && (
-              <button
-                onClick={downloadSignature}
-                disabled={isDownloading || isSendingEmail}
-                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isDownloading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : isSendingEmail ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : emailSent ? (
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                ) : (
-                  <Save className="w-5 h-5" />
-                )}
-                <span>
-                  {isDownloading ? 'Téléchargement en cours...' :
-                    isSendingEmail ? 'Envoi par email...' :
-                      emailSent ? 'Email envoyé !' :
-                        'Télécharger la signature (PNG)'}
-                </span>
-              </button>
-            )}
-
-            {/* Animation de téléchargement */}
-            {isDownloading && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-blue-900 mb-1">Génération de la signature</h3>
+                  <div className="w-full bg-blue-200 rounded-full h-2.5 mb-1.5">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${buildProgress}%` }}
+                    ></div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-green-800">Génération de l'image PNG...</p>
-                    <p className="text-xs text-green-600">Veuillez patienter, votre signature est en cours de téléchargement</p>
-                  </div>
+                  <p className="text-xs text-blue-700 font-medium">{buildProgress}% terminé</p>
                 </div>
-              </div>
-            )}
-
-            {/* Animation d'envoi d'email */}
-            {isSendingEmail && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Send className="w-4 h-4 text-blue-600 animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-800">Envoi de votre signature par email...</p>
-                    <p className="text-xs text-blue-600">Votre signature sera automatiquement envoyée dans votre boîte mail</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Confirmation d'envoi d'email */}
-            {emailSent && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-green-800">Email envoyé avec succès !</p>
-                    <p className="text-xs text-green-600">Votre signature a été envoyée dans votre boîte mail</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Zone de prévisualisation */}
-          {showPreview && (
-            <div className="mt-8 w-full overflow-x-auto">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                Aperçu de votre signature
-              </h3>
-              <div className="w-full" ref={previewRef}>
-                <SignaturePreview userData={userData} />
               </div>
             </div>
           )}
 
+          {/* Barre d'Actions Principales */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className="px-5 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-all flex items-center gap-2 text-sm"
+            >
+              <Eye className="w-4 h-4" />
+              <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu'}</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={generateSignature}
+              disabled={isGenerating || !userData.prenom || !userData.nom}
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-blue-200 flex items-center gap-2 text-sm"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                getStatusIcon()
+              )}
+              <span>Générer ma signature</span>
+            </button>
+
+            {/* Bouton 1-Click Copie HTML Outlook */}
+            <button
+              type="button"
+              onClick={copySignatureHtmlToClipboard}
+              className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md flex items-center gap-2 text-sm ${
+                isCopiedHtml
+                  ? "bg-emerald-600 text-white"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200"
+              }`}
+            >
+              {isCopiedHtml ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+              <span>{isCopiedHtml ? 'Copié !' : 'Copier pour Outlook (HTML)'}</span>
+            </button>
+
+            {generationStatus === 'success' && (
+              <button
+                type="button"
+                onClick={downloadSignature}
+                disabled={isDownloading || isSendingEmail}
+                className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-emerald-200 flex items-center gap-2 text-sm"
+              >
+                {isDownloading || isSendingEmail ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : emailSent ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>
+                  {isDownloading ? 'Téléchargement...' :
+                    isSendingEmail ? 'Envoi...' :
+                      emailSent ? 'Email envoyé !' :
+                        'Télécharger PNG + Email'}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Zone de Prévisualisation Interactives */}
+          {showPreview && (
+            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("simulator")}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      previewTab === "simulator"
+                        ? "bg-white text-blue-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    💌 Simulateur Mail (Mode Sombre / Clair)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("direct")}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      previewTab === "direct"
+                        ? "bg-white text-blue-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    🖼️ Rendu Graphique Brut (2200x700)
+                  </button>
+                </div>
+
+                <div className="text-xs text-gray-500 font-medium">
+                  {previewTab === "simulator" ? "Rendu dans un vrai client mail Outlook" : "Rendu visuel d'origine pour l'export image"}
+                </div>
+              </div>
+
+              {previewTab === "simulator" ? (
+                <EmailSimulator
+                  userData={userData}
+                  onCopyHtml={copySignatureHtmlToClipboard}
+                  onDownloadPng={downloadSignature}
+                />
+              ) : (
+                <div className="w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100" ref={previewRef}>
+                  <SignaturePreview userData={userData} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Conteneur caché pour la génération d'image haute résolution */}
+      {/* Conteneur caché pour le rendu PNG 2200x700 */}
       <div
         style={{
           position: 'absolute',
@@ -892,8 +742,6 @@ export default function SignatureGenerator() {
           <SignaturePreview userData={userData} />
         </div>
       </div>
-
-
     </div>
   );
 }

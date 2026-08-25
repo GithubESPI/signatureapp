@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { graphApiClient, GraphApiClient } from '@/lib/axiosExtension';
+import { 
+  graphApiClient, 
+  GraphApiClient, 
+  GraphUser, 
+  GraphMessage, 
+  GraphMailboxSettings, 
+  GraphDriveItem 
+} from '@/lib/axiosExtension';
 
 interface UseGraphApiReturn {
   client: GraphApiClient;
@@ -13,7 +20,7 @@ interface UseGraphApiReturn {
 }
 
 export function useGraphApi(): UseGraphApiReturn {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -69,7 +76,7 @@ export function useGraphApi(): UseGraphApiReturn {
 // Hook spécialisé pour les emails
 export function useGraphEmails() {
   const { client, isLoading, error, isAuthenticated } = useGraphApi();
-  const [emails, setEmails] = useState<any[]>([]);
+  const [emails, setEmails] = useState<GraphMessage[]>([]);
   const [loadingEmails, setLoadingEmails] = useState(false);
 
   const fetchEmails = useCallback(async (folderId: string = 'inbox', top: number = 10) => {
@@ -125,7 +132,7 @@ export function useGraphEmails() {
 // Hook spécialisé pour le profil utilisateur
 export function useGraphProfile() {
   const { client, isLoading, error, isAuthenticated } = useGraphApi();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<GraphUser | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   const fetchProfile = useCallback(async () => {
@@ -150,7 +157,6 @@ export function useGraphProfile() {
         }
       } catch (photoError) {
         console.log('Photo de profil non disponible:', photoError);
-        // La photo n'est pas disponible, on continue sans
       }
       
       setProfile(userProfile);
@@ -174,7 +180,7 @@ export function useGraphProfile() {
 // Hook spécialisé pour les fichiers OneDrive
 export function useGraphFiles() {
   const { client, isLoading, error, isAuthenticated } = useGraphApi();
-  const [files, setFiles] = useState<any[]>([]);
+  const [files, setFiles] = useState<GraphDriveItem[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
 
   const fetchFiles = useCallback(async (folderId: string = 'root', top: number = 20) => {
@@ -234,7 +240,7 @@ export function useGraphFiles() {
 // Hook spécialisé pour les paramètres de boîte aux lettres
 export function useGraphMailboxSettings() {
   const { client, isLoading, error, isAuthenticated } = useGraphApi();
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<GraphMailboxSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
 
   const fetchSettings = useCallback(async () => {
@@ -251,7 +257,7 @@ export function useGraphMailboxSettings() {
     }
   }, [client, isAuthenticated]);
 
-  const updateSettings = useCallback(async (newSettings: any) => {
+  const updateSettings = useCallback(async (newSettings: Parameters<typeof client.updateMailboxSettings>[0]) => {
     if (!isAuthenticated) throw new Error('Non authentifié');
 
     try {

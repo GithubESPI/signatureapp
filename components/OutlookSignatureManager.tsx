@@ -50,9 +50,10 @@ export default function OutlookSignatureManager({
         const errorData = await response.json();
         throw new Error(errorData.message || 'Erreur lors du test des permissions');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ [OutlookSignature] Erreur test permissions:", error);
-      setErrorMessage(error.message || "Erreur lors du test des permissions");
+      const msg = error instanceof Error ? error.message : "Erreur lors du test des permissions";
+      setErrorMessage(msg);
       setStatus('error');
     } finally {
       setIsSending(false);
@@ -101,9 +102,10 @@ export default function OutlookSignatureManager({
         const errorData = await response.json();
         throw new Error(errorData.message || 'Erreur lors de l\'envoi');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ [OutlookSignature] Erreur:", error);
-      setErrorMessage(error.message || "Erreur lors de l'envoi de la signature");
+      const msg = error instanceof Error ? error.message : "Erreur lors de l'envoi de la signature";
+      setErrorMessage(msg);
       setStatus('error');
     } finally {
       setIsSending(false);

@@ -187,7 +187,7 @@ export default function GraphApiDemo() {
                       De: {email.from?.emailAddress?.name || email.from?.emailAddress?.address}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(email.receivedDateTime).toLocaleString()}
+                      {email.receivedDateTime ? new Date(email.receivedDateTime).toLocaleString() : ''}
                     </p>
                   </div>
                   {email.hasAttachments && (
@@ -231,14 +231,14 @@ export default function GraphApiDemo() {
                       {file.size ? `${Math.round(file.size / 1024)} KB` : 'Dossier'}
                     </p>
                   </div>
-                  {file.file && (
+                  {file.file ? (
                     <button
-                      onClick={() => handleDownloadFile(file.id, file.name)}
+                      onClick={() => handleDownloadFile(file.id, file.name || 'fichier')}
                       className="text-blue-600 hover:text-blue-800 transition-colors"
                     >
                       <Download className="w-4 h-4" />
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))}

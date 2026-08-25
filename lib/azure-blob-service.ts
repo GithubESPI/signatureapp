@@ -1,5 +1,5 @@
-import { BlobServiceClient, ContainerClient, BlobClient } from "@azure/storage-blob";
-import { handleBlobStorageError, AzureBlobError } from "./azure-error-handler";
+import { BlobServiceClient } from "@azure/storage-blob";
+import { handleBlobStorageError } from "./azure-error-handler";
 
 export class AzureBlobService {
   private containerUrl: string;

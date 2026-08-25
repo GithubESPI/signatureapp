@@ -3,8 +3,101 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 // Configuration de base pour Microsoft Graph API
 const GRAPH_API_BASE_URL = process.env.NEXT_PUBLIC_GRAPH_API || 'https://graph.microsoft.com/v1.0';
 
+// Interfaces pour les modèles Microsoft Graph
+export interface GraphUser {
+  id: string;
+  displayName?: string;
+  givenName?: string;
+  surname?: string;
+  mail?: string;
+  userPrincipalName?: string;
+  jobTitle?: string;
+  mobilePhone?: string;
+  officeLocation?: string;
+  department?: string;
+  companyName?: string;
+  photo?: string;
+  [key: string]: unknown;
+}
+
+export interface GraphEmailAddress {
+  emailAddress?: {
+    name?: string;
+    address?: string;
+  };
+}
+
+export interface GraphMessage {
+  id: string;
+  subject?: string;
+  from?: GraphEmailAddress;
+  receivedDateTime?: string;
+  bodyPreview?: string;
+  hasAttachments?: boolean;
+  isRead?: boolean;
+  [key: string]: unknown;
+}
+
+export interface GraphMailFolder {
+  id: string;
+  displayName: string;
+  parentFolderId?: string;
+  childFolderCount?: number;
+  unreadItemCount?: number;
+  totalItemCount?: number;
+}
+
+export interface GraphAutomaticReplies {
+  status?: 'disabled' | 'alwaysEnabled' | 'scheduled';
+  externalAudience?: 'none' | 'contactsOnly' | 'all';
+  internalReplyMessage?: string;
+  externalReplyMessage?: string;
+}
+
+export interface GraphLanguage {
+  locale?: string;
+  displayName?: string;
+}
+
+export interface GraphMailboxSettings {
+  automaticRepliesSetting?: GraphAutomaticReplies;
+  timeZone?: string;
+  language?: GraphLanguage;
+  workingHours?: unknown;
+  [key: string]: unknown;
+}
+
+export interface GraphContact {
+  id: string;
+  displayName?: string;
+  givenName?: string;
+  surname?: string;
+  emailAddresses?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface GraphEvent {
+  id: string;
+  subject?: string;
+  start?: { dateTime: string; timeZone: string };
+  end?: { dateTime: string; timeZone: string };
+  location?: unknown;
+  attendees?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface GraphDriveItem {
+  id: string;
+  name?: string;
+  size?: number;
+  webUrl?: string;
+  folder?: unknown;
+  file?: unknown;
+  [key: string]: unknown;
+}
+
 // Interface pour les réponses Graph API
-export interface GraphApiResponse<T = any> {
+export interface GraphApiResponse<T = unknown> {
   value: T[];
   '@odata.nextLink'?: string;
   '@odata.count'?: number;
@@ -72,9 +165,9 @@ export class GraphApiClient {
   /**
    * Récupère le profil de l'utilisateur connecté
    */
-  async getMe(): Promise<any> {
+  async getMe(): Promise<GraphUser> {
     try {
-      const response = await this.axiosInstance.get('/me', {
+      const response = await this.axiosInstance.get<GraphUser>('/me', {
         params: {
           $select: 'id,displayName,givenName,surname,mail,userPrincipalName,jobTitle,mobilePhone,officeLocation,department,companyName'
         }
@@ -89,9 +182,9 @@ export class GraphApiClient {
   /**
    * Récupère les emails de l'utilisateur
    */
-  async getMessages(folderId: string = 'inbox', top: number = 10): Promise<any[]> {
+  async getMessages(folderId: string = 'inbox', top: number = 10): Promise<GraphMessage[]> {
     try {
-      const response = await this.axiosInstance.get(`/me/mailFolders/${folderId}/messages`, {
+      const response = await this.axiosInstance.get<GraphApiResponse<GraphMessage>>(`/me/mailFolders/${folderId}/messages`, {
         params: {
           $top: top,
           $orderby: 'receivedDateTime desc',
@@ -121,7 +214,7 @@ export class GraphApiClient {
       contentType: string;
       contentBytes: string;
     }>;
-  }): Promise<any> {
+  }): Promise<unknown> {
     try {
       const response = await this.axiosInstance.post('/me/sendMail', {
         message,
@@ -137,9 +230,9 @@ export class GraphApiClient {
   /**
    * Marque un email comme lu
    */
-  async markAsRead(messageId: string): Promise<any> {
+  async markAsRead(messageId: string): Promise<GraphMessage> {
     try {
-      const response = await this.axiosInstance.patch(`/me/messages/${messageId}`, {
+      const response = await this.axiosInstance.patch<GraphMessage>(`/me/messages/${messageId}`, {
         isRead: true,
       });
       return response.data;
@@ -152,9 +245,9 @@ export class GraphApiClient {
   /**
    * Marque un email comme non lu
    */
-  async markAsUnread(messageId: string): Promise<any> {
+  async markAsUnread(messageId: string): Promise<GraphMessage> {
     try {
-      const response = await this.axiosInstance.patch(`/me/messages/${messageId}`, {
+      const response = await this.axiosInstance.patch<GraphMessage>(`/me/messages/${messageId}`, {
         isRead: false,
       });
       return response.data;
@@ -167,7 +260,7 @@ export class GraphApiClient {
   /**
    * Supprime un email
    */
-  async deleteMessage(messageId: string): Promise<any> {
+  async deleteMessage(messageId: string): Promise<unknown> {
     try {
       const response = await this.axiosInstance.delete(`/me/messages/${messageId}`);
       return response.data;
@@ -180,9 +273,9 @@ export class GraphApiClient {
   /**
    * Déplace un email vers un dossier
    */
-  async moveMessage(messageId: string, destinationId: string): Promise<any> {
+  async moveMessage(messageId: string, destinationId: string): Promise<GraphMessage> {
     try {
-      const response = await this.axiosInstance.post(`/me/messages/${messageId}/move`, {
+      const response = await this.axiosInstance.post<GraphMessage>(`/me/messages/${messageId}/move`, {
         destinationId,
       });
       return response.data;
@@ -195,9 +288,9 @@ export class GraphApiClient {
   /**
    * Copie un email vers un dossier
    */
-  async copyMessage(messageId: string, destinationId: string): Promise<any> {
+  async copyMessage(messageId: string, destinationId: string): Promise<GraphMessage> {
     try {
-      const response = await this.axiosInstance.post(`/me/messages/${messageId}/copy`, {
+      const response = await this.axiosInstance.post<GraphMessage>(`/me/messages/${messageId}/copy`, {
         destinationId,
       });
       return response.data;
@@ -210,9 +303,9 @@ export class GraphApiClient {
   /**
    * Récupère les dossiers de l'utilisateur
    */
-  async getMailFolders(): Promise<any[]> {
+  async getMailFolders(): Promise<GraphMailFolder[]> {
     try {
-      const response = await this.axiosInstance.get('/me/mailFolders');
+      const response = await this.axiosInstance.get<GraphApiResponse<GraphMailFolder>>('/me/mailFolders');
       return response.data.value;
     } catch (error) {
       console.error('Erreur lors de la récupération des dossiers:', error);
@@ -223,9 +316,9 @@ export class GraphApiClient {
   /**
    * Récupère les paramètres de la boîte aux lettres
    */
-  async getMailboxSettings(): Promise<any> {
+  async getMailboxSettings(): Promise<GraphMailboxSettings> {
     try {
-      const response = await this.axiosInstance.get('/me/mailboxSettings');
+      const response = await this.axiosInstance.get<GraphMailboxSettings>('/me/mailboxSettings');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des paramètres de boîte aux lettres:', error);
@@ -264,9 +357,9 @@ export class GraphApiClient {
         name: string;
       };
     };
-  }): Promise<any> {
+  }): Promise<GraphMailboxSettings> {
     try {
-      const response = await this.axiosInstance.patch('/me/mailboxSettings', settings);
+      const response = await this.axiosInstance.patch<GraphMailboxSettings>('/me/mailboxSettings', settings);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour des paramètres de boîte aux lettres:', error);
@@ -277,9 +370,9 @@ export class GraphApiClient {
   /**
    * Récupère les contacts de l'utilisateur
    */
-  async getContacts(top: number = 50): Promise<any[]> {
+  async getContacts(top: number = 50): Promise<GraphContact[]> {
     try {
-      const response = await this.axiosInstance.get('/me/contacts', {
+      const response = await this.axiosInstance.get<GraphApiResponse<GraphContact>>('/me/contacts', {
         params: {
           $top: top,
           $orderby: 'displayName',
@@ -295,9 +388,9 @@ export class GraphApiClient {
   /**
    * Récupère les événements du calendrier
    */
-  async getEvents(top: number = 10): Promise<any[]> {
+  async getEvents(top: number = 10): Promise<GraphEvent[]> {
     try {
-      const response = await this.axiosInstance.get('/me/events', {
+      const response = await this.axiosInstance.get<GraphApiResponse<GraphEvent>>('/me/events', {
         params: {
           $top: top,
           $orderby: 'start/dateTime',
@@ -335,9 +428,9 @@ export class GraphApiClient {
       };
       type: 'required' | 'optional' | 'resource';
     }>;
-  }): Promise<any> {
+  }): Promise<GraphEvent> {
     try {
-      const response = await this.axiosInstance.post('/me/events', event);
+      const response = await this.axiosInstance.post<GraphEvent>('/me/events', event);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la création de l\'événement:', error);
@@ -348,9 +441,9 @@ export class GraphApiClient {
   /**
    * Récupère les fichiers OneDrive de l'utilisateur
    */
-  async getDriveItems(folderId: string = 'root', top: number = 20): Promise<any[]> {
+  async getDriveItems(folderId: string = 'root', top: number = 20): Promise<GraphDriveItem[]> {
     try {
-      const response = await this.axiosInstance.get(`/me/drive/items/${folderId}/children`, {
+      const response = await this.axiosInstance.get<GraphApiResponse<GraphDriveItem>>(`/me/drive/items/${folderId}/children`, {
         params: {
           $top: top,
           $orderby: 'name',
@@ -368,7 +461,7 @@ export class GraphApiClient {
    */
   async downloadFile(itemId: string): Promise<ArrayBuffer> {
     try {
-      const response = await this.axiosInstance.get(`/me/drive/items/${itemId}/content`, {
+      const response = await this.axiosInstance.get<ArrayBuffer>(`/me/drive/items/${itemId}/content`, {
         responseType: 'arraybuffer',
       });
       return response.data;
@@ -385,9 +478,9 @@ export class GraphApiClient {
     fileName: string,
     fileContent: ArrayBuffer | Buffer,
     folderPath: string = '/'
-  ): Promise<any> {
+  ): Promise<GraphDriveItem> {
     try {
-      const response = await this.axiosInstance.put(
+      const response = await this.axiosInstance.put<GraphDriveItem>(
         `/me/drive/root:${folderPath}${fileName}:/content`,
         fileContent,
         {
@@ -406,10 +499,10 @@ export class GraphApiClient {
   /**
    * Méthode générique pour les appels API personnalisés
    */
-  async customRequest<T = any>(
+  async customRequest<T = unknown>(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
     endpoint: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> {
     try {
@@ -433,7 +526,7 @@ export class GraphApiClient {
     try {
       await this.getMe();
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

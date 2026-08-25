@@ -167,12 +167,12 @@ export default function SasConnectionTest() {
               <h4 className="font-medium text-yellow-900">Configuration requise</h4>
             </div>
             <div className="text-sm text-yellow-800 space-y-2">
-              <p>Pour configurer l'accès Azure Storage :</p>
+              <p>Pour configurer l&apos;accès Azure Storage :</p>
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Récupérez la chaîne de connexion dans le portail Azure</li>
                 <li>Ajoutez <code className="bg-yellow-100 px-1 rounded">AZURE_STORAGE_CONNECTION_STRING</code> à votre fichier .env</li>
-                <li>Configurez <code className="bg-yellow-100 px-1 rounded">AZURE_STORAGE_CONTAINER_NAME</code> (par défaut : "templatesignature")</li>
-                <li>Relancez l'application</li>
+                <li>Configurez <code className="bg-yellow-100 px-1 rounded">AZURE_STORAGE_CONTAINER_NAME</code> (par défaut : &quot;templatesignature&quot;)</li>
+                <li>Relancez l&apos;application</li>
               </ol>
             </div>
           </div>

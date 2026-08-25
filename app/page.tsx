@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FileText, Shield, Zap, ArrowRight, CheckCircle, PlayCircle, LogIn } from "lucide-react";
@@ -10,7 +11,8 @@ import LoginModal from "@/components/LoginModal";
 import AnimatedSignaturePreview from "@/components/AnimatedSignaturePreview";
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const router = useRouter();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -49,7 +51,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 group cursor-pointer"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => router.push('/dashboard')}
             >
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
                 <FileText className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
@@ -69,7 +71,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 group cursor-pointer"
-              onClick={() => window.location.href = '/tutorial'}
+              onClick={() => router.push('/tutorial')}
             >
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
                 <PlayCircle className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />

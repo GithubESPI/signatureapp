@@ -7,10 +7,7 @@ import {
   Download, 
   Send, 
   Plus, 
-  Edit, 
-  Trash2,
   CheckCircle,
-  AlertCircle,
   Loader
 } from "lucide-react";
 

@@ -3,8 +3,7 @@
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { FileText, Home, User, Settings, LogOut } from "lucide-react";
+import { FileText, Home } from "lucide-react";
 import AzureLoginButton from "./AzureLoginButton";
 
 export default function Navigation() {
