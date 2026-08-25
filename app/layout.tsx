@@ -1,27 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Commissioner, PT_Serif } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const poppins = Poppins({
-  variable: "--font-poppins",
+const commissioner = Commissioner({
+  variable: "--font-commissioner",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const ptSerif = PT_Serif({
+  variable: "--font-pt-serif",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-  title: "SignatureApp - Générateur de Signatures",
-  description: "Créez et envoyez vos signatures personnalisées avec Azure et Microsoft Graph",
+  title: "ESPI SignatureApp - Générateur Officiel de Signatures",
+  description: "Générez et installez votre signature d'email officielle aux couleurs de la nouvelle charte ESPI",
+  icons: {
+    icon: "/charte/LOGO ESPI/Bleu/RVB/PNG/ESPI_emblème_élévation_bleu_RVB.png",
+  },
 };
 
 export default function RootLayout({
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
+        className={`${commissioner.variable} ${ptSerif.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <Providers>

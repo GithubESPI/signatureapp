@@ -4,15 +4,12 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  FileText,
   LogOut,
-  CheckCircle,
+  Sparkles,
   AlertCircle
 } from "lucide-react";
 import DashboardUserProfile from "@/components/DashboardUserProfile";
-
 import SignatureGenerator from "@/components/SignatureGenerator";
-
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -24,18 +21,18 @@ export default function Dashboard() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="w-8 h-8 border-4 border-[#004976] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <div className="w-8 h-8 border-4 border-[#004976] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xs font-semibold text-slate-500">Chargement de votre session...</p>
         </div>
       </div>
     );
@@ -43,14 +40,14 @@ export default function Dashboard() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Accès non autorisé</h2>
-          <p className="text-gray-600 mb-4">Vous devez être connecté pour accéder au dashboard.</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+        <div className="text-center bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200/80 max-w-md w-full">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#002D4A] mb-2">Accès non autorisé</h2>
+          <p className="text-xs text-slate-500 mb-6 font-medium">Vous devez être connecté avec votre compte Microsoft ESPI pour accéder au dashboard.</p>
           <a
             href="/login"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center justify-center w-full px-5 py-3 bg-[#004976] text-white text-xs font-bold rounded-xl hover:bg-[#003a5e] transition-all shadow-md shadow-[#004976]/20"
           >
             Se connecter
           </a>
@@ -60,25 +57,37 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200/80 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4 sm:gap-0">
-            <div className="flex items-center w-full sm:w-auto justify-center sm:justify-start">
-              <FileText className="w-8 h-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">Signature App</h1>
+          <div className="flex justify-between items-center py-3.5">
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/charte/LOGO ESPI/Bleu/RVB/PNG/ESPI_logos_horizontal_bleu_RVB.png" 
+                alt="Groupe ESPI" 
+                className="h-9 w-auto object-contain"
+              />
+              <div className="hidden sm:block pl-2.5 border-l border-slate-300">
+                <span className="text-xs font-bold text-[#004976] tracking-wider uppercase block leading-none">
+                  SignatureApp
+                </span>
+                <span className="text-[10px] text-[#47B5E0] font-semibold italic block leading-none mt-0.5">
+                  Espace Collaborateur
+                </span>
+              </div>
             </div>
-            <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session.user?.name}</p>
-                <p className="text-xs text-gray-500">{session.user?.email}</p>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-[#002D4A] leading-tight">{session.user?.name}</p>
+                <p className="text-[11px] text-slate-500 font-medium">{session.user?.email}</p>
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-slate-200"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
                 Déconnexion
               </button>
             </div>
@@ -87,7 +96,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full">
           {/* User Profile Sidebar */}
           <div className="lg:col-span-1">
@@ -101,18 +110,27 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl shadow-lg p-8"
+              className="bg-gradient-to-r from-[#003A5E] via-[#004976] to-[#002D4A] rounded-3xl shadow-xl p-6 md:p-8 text-white relative overflow-hidden"
             >
-              <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-4">
-                  <CheckCircle className="w-6 h-6 text-white" />
-                </div>
+              {/* Motifs géométriques */}
+              <div
+                className="absolute -right-10 -bottom-10 w-60 h-60 opacity-10 pointer-events-none rounded-full"
+                style={{
+                  background: "radial-gradient(circle, #47B5E0 0%, transparent 70%)"
+                }}
+              />
+              
+              <div className="flex items-center justify-between gap-4 relative z-10">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Bienvenue, {session.user?.name?.split(' ')[0]} !
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold mb-3 backdrop-blur-sm border border-white/20">
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#47B5E0]" />
+                    Nouvelle Charte Graphique 2026
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white mb-1">
+                    Bonjour, {session.user?.name?.split(' ')[0]} !
                   </h2>
-                  <p className="text-gray-600">
-                    Vous êtes connecté avec votre compte Microsoft
+                  <p className="text-xs md:text-sm text-[#E6EDF1] font-medium max-w-xl">
+                    Personnalisez votre signature d&apos;email officielle chartée et exportez-la en 1 clic pour Outlook.
                   </p>
                 </div>
               </div>
@@ -122,7 +140,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <SignatureGenerator />
             </motion.div>

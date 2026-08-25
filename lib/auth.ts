@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
       tenantId: process.env.AZURE_AD_TENANT_ID || "",
       authorization: {
         params: {
-          scope: "openid profile email User.Read Mail.ReadWrite MailboxSettings.ReadWrite"
+          scope: "openid profile email User.Read Mail.ReadWrite Mail.Send MailboxSettings.ReadWrite"
         }
       },
       profile(profile) {

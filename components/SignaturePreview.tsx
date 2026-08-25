@@ -8,127 +8,187 @@ interface SignaturePreviewProps {
 }
 
 export default function SignaturePreview({ userData, className = "" }: SignaturePreviewProps) {
+  const fullName = `${userData.prenom || 'Prénom'} ${userData.nom || 'NOM'}`.trim();
+  
+  // Formatage propre de l'adresse
+  const cleanAdresse = userData.adresse?.replace(/,/g, '')?.trim() || '';
+  const cleanCodePostal = userData.codePostal?.replace(/,/g, '')?.trim() || '';
+  const cleanVille = userData.ville?.replace(/,/g, '')?.trim() || '';
+  const fullAddress = [cleanAdresse, cleanCodePostal, cleanVille].filter(Boolean).join(' ');
+
+  // Formatage du numéro de téléphone
+  let formattedPhone = '';
+  if (userData.telephone) {
+    const cleanPhone = userData.telephone.replace(/\s/g, '').replace(/[-.]/g, '');
+    if (userData.indicatifPays === 'FR') {
+      let phoneToFormat = cleanPhone;
+      if (phoneToFormat.length === 9 && !phoneToFormat.startsWith('0')) {
+        phoneToFormat = '0' + phoneToFormat;
+      }
+      if (phoneToFormat.length === 10 && phoneToFormat.startsWith('0')) {
+        formattedPhone = `${phoneToFormat.slice(0, 2)} ${phoneToFormat.slice(2, 4)} ${phoneToFormat.slice(4, 6)} ${phoneToFormat.slice(6, 8)} ${phoneToFormat.slice(8)}`;
+      } else {
+        formattedPhone = phoneToFormat.match(/.{1,2}/g)?.join(' ') || phoneToFormat;
+      }
+    } else if (userData.indicatifPays === 'CA') {
+      if (cleanPhone.length === 10) {
+        formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
+      } else {
+        formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
+      }
+    } else {
+      formattedPhone = cleanPhone;
+    }
+  }
+
+  const indicatif = userData.indicatifPays === 'FR' ? '+33' : '+1';
+
   return (
-    <div className={`w-full ${className}`} style={{ containerType: 'inline-size' }}>
-      {/* Image de fond */}
+    <div className={`w-full select-none ${className}`} style={{ containerType: 'inline-size' }}>
+      {/* Conteneur Haute Définition 2200x700 - Fond Bleu Élévation Pur (#004976) */}
       <div
-        className="relative w-full bg-cover bg-center bg-no-repeat"
+        className="relative w-full overflow-hidden shadow-2xl"
         style={{
-          backgroundImage: "url('/images/model-signature.png')",
           aspectRatio: "2200/700",
+          backgroundColor: "#004976",
         }}
       >
-        {/* Overlay pour le contenu */}
-        <div
-          className="absolute inset-0 flex justify-between items-start"
-          style={{ padding: '3.6cqw 0.5cqw 3.6cqw 3.6cqw' }}
-        >
-          {/* Section gauche - Vide */}
-          <div className="flex flex-col justify-center">
+        {/* Grille Principale */}
+        <div className="absolute inset-0 flex items-center justify-between px-[6cqw] py-[3.5cqw]">
+          
+          {/* Section Gauche : Logo Vertical Contour ESPI + Slogans Officiels en dessous */}
+          <div className="flex flex-col justify-center items-center w-[30%] shrink-0">
+            <img
+              src="/charte/LOGO ESPI/Contour/PNG/ESPI_logo_vertical_CONTOUR.png"
+              alt="Logo ESPI"
+              className="w-[62%] max-w-[250px] h-auto object-contain drop-shadow-sm mb-[1.2cqw]"
+            />
+            <div className="text-center px-1">
+              <p
+                className="text-[#E6EDF1] font-semibold leading-tight"
+                style={{
+                  fontFamily: "var(--font-commissioner), sans-serif",
+                  fontSize: "0.95cqw",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                École Supérieure des Professions Immobilières
+              </p>
+            </div>
           </div>
 
-          {/* Section droite - Informations utilisateur */}
+          {/* Séparateur Vertical Biseauté Subtil */}
           <div
-            className="flex flex-col justify-center text-left ml-auto"
+            className="h-[75%] w-[1.5px] opacity-25"
             style={{
-              gap: '1.6cqw',
-              maxWidth: 'none',
-              width: '45%', // Ajusté à 45% pour décaler légèrement vers la gauche
-              paddingTop: '0.5cqw' // Remonté au maximum
+              background: "linear-gradient(180deg, transparent 0%, #FFFFFF 30%, #47B5E0 70%, transparent 100%)",
+            }}
+          />
+
+          {/* Section Droite : Informations Collaborateur (Décalée vers la droite avec icônes) */}
+          <div
+            className="flex flex-col justify-center text-left w-[62%] pl-[7cqw] pr-[1cqw]"
+            style={{
+              gap: "1.15cqw",
             }}
           >
-            {/* Nom complet */}
+            {/* Nom & Prénom */}
             <div>
               <h2
-                className="font-semibold text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2.35cqw', whiteSpace: 'nowrap' }}
+                className="font-bold text-white tracking-wide leading-none drop-shadow-sm"
+                style={{
+                  fontFamily: "var(--font-commissioner), sans-serif",
+                  fontSize: "2.65cqw",
+                  whiteSpace: "nowrap",
+                }}
               >
-                {userData.prenom} {userData.nom}
+                {fullName}
               </h2>
             </div>
 
-            {/* Fonction */}
+            {/* Fonction / Poste (Bien visible en blanc éclatant) */}
             {userData.fonction && (
               <div>
                 <p
-                  className="font-medium text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.75cqw', whiteSpace: 'normal' }}
+                  className="font-normal text-white leading-snug break-words drop-shadow-sm"
+                  style={{
+                    fontFamily: "var(--font-commissioner), sans-serif",
+                    fontSize: "1.75cqw",
+                    opacity: 0.98,
+                  }}
                 >
                   {userData.fonction}
                 </p>
               </div>
             )}
 
-            {/* Téléphone */}
-            {userData.telephone && (() => {
-              // Formater le téléphone avec 0 et espaces réduits
-              const cleanPhone = userData.telephone.replace(/\s/g, '').replace(/[-.]/g, '');
-              let formattedPhone = '';
-
-              if (userData.indicatifPays === 'FR') {
-                let phoneToFormat = cleanPhone;
-                // Ajouter le 0 si manquant (9 chiffres)
-                if (phoneToFormat.length === 9 && !phoneToFormat.startsWith('0')) {
-                  phoneToFormat = '0' + phoneToFormat;
-                }
-
-                // Format français avec 0 : 0X XX XX XX XX
-                if (phoneToFormat.length === 10 && phoneToFormat.startsWith('0')) {
-                  formattedPhone = `${phoneToFormat.slice(0, 2)} ${phoneToFormat.slice(2, 4)} ${phoneToFormat.slice(4, 6)} ${phoneToFormat.slice(6, 8)} ${phoneToFormat.slice(8)}`;
-                } else {
-                  formattedPhone = phoneToFormat.match(/.{1,2}/g)?.join(' ') || phoneToFormat;
-                }
-              } else if (userData.indicatifPays === 'CA') {
-                // Format canadien : XXX XXX XXXX
-                if (cleanPhone.length === 10) {
-                  formattedPhone = `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
-                } else {
-                  formattedPhone = cleanPhone.match(/.{1,3}/g)?.join(' ') || cleanPhone;
-                }
-              } else {
-                formattedPhone = cleanPhone;
-              }
-
-              const indicatif = userData.indicatifPays === 'FR' ? '+33' : '+1';
-
-              return (
-                <div>
-                  <p
-                    className="text-white leading-tight"
-                    style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', whiteSpace: 'nowrap' }}
-                  >
-                    ({indicatif}) {formattedPhone}
-                  </p>
-                </div>
-              );
-            })()}
-
-            {/* Adresse complète */}
-            {(userData.adresse || userData.codePostal || userData.ville) && (
-              <div>
+            {/* Téléphone avec icône */}
+            {formattedPhone && (
+              <div className="flex items-center gap-[0.9cqw]">
+                <span className="text-[#FFB461] text-[1.3cqw] shrink-0">📞</span>
                 <p
-                  className="text-white leading-tight break-words"
-                  style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', wordBreak: 'break-word', whiteSpace: 'normal' }}
+                  className="text-[#F2F6F8] font-normal leading-tight"
+                  style={{
+                    fontFamily: "var(--font-commissioner), sans-serif",
+                    fontSize: "1.45cqw",
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  {[
-                    userData.adresse?.replace(/,/g, '')?.trim(),
-                    userData.codePostal?.replace(/,/g, '')?.trim(),
-                    userData.ville?.replace(/,/g, '')?.trim()
-                  ].filter(Boolean).join(' ')}
+                  ({indicatif}) {formattedPhone}
                 </p>
               </div>
             )}
 
-            {/* Site web */}
-            <div>
+            {/* Adresse Campus ESPI avec icône */}
+            {fullAddress && (
+              <div className="flex items-start gap-[0.9cqw]">
+                <span className="text-[#47B5E0] text-[1.3cqw] shrink-0 mt-[0.1cqw]">📍</span>
+                <p
+                  className="text-[#E6EDF1] font-normal leading-snug break-words"
+                  style={{
+                    fontFamily: "var(--font-commissioner), sans-serif",
+                    fontSize: "1.4cqw",
+                    maxWidth: "94%",
+                  }}
+                >
+                  {fullAddress}
+                </p>
+              </div>
+            )}
+
+            {/* Email Professionnel avec icône */}
+            {userData.email && (
+              <div className="flex items-center gap-[0.9cqw]">
+                <span className="text-[#FF7D97] text-[1.3cqw] shrink-0">✉️</span>
+                <p
+                  className="text-[#F2F6F8] font-normal leading-tight"
+                  style={{
+                    fontFamily: "var(--font-commissioner), sans-serif",
+                    fontSize: "1.4cqw",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {userData.email}
+                </p>
+              </div>
+            )}
+
+            {/* Site Web Officiel ESPI avec icône */}
+            <div className="flex items-center gap-[0.9cqw] pt-[0.1cqw]">
+              <span className="text-[#47B5E0] text-[1.3cqw] shrink-0">🌐</span>
               <p
-                className="text-white leading-tight"
-                style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.65cqw', whiteSpace: 'nowrap' }}
+                className="text-white font-semibold leading-tight tracking-wider"
+                style={{
+                  fontFamily: "var(--font-commissioner), sans-serif",
+                  fontSize: "1.45cqw",
+                  whiteSpace: "nowrap",
+                }}
               >
                 www.groupe-espi.fr
               </p>
             </div>
           </div>
+
         </div>
       </div>
     </div>

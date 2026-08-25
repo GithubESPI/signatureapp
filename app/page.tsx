@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FileText, Shield, Zap, ArrowRight, CheckCircle, PlayCircle, LogIn } from "lucide-react";
+import { FileText, Shield, Zap, ArrowRight, CheckCircle, PlayCircle, LogIn, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import LoginModal from "@/components/LoginModal";
@@ -25,7 +25,7 @@ export default function Home() {
   // --- VUE CONNECTÉE (Dashboard d'accueil) ---
   if (session) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F8FAFC]">
         <Navigation />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -35,11 +35,15 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-12"
           >
-            <h1 className="text-3xl font-bold text-gray-900">
-              Bienvenue, <span className="text-blue-600">{session.user?.name?.split(' ')[0]}</span> 👋
+            <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#004976]/10 text-[#004976] text-xs font-bold mb-4 border border-[#004976]/20">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#47B5E0]" />
+              Charte Graphique Officielle 2026
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#002D4A] tracking-tight">
+              Bienvenue, <span className="text-[#004976]">{session.user?.name?.split(' ')[0]}</span> 👋
             </h1>
-            <p className="text-gray-600 mt-2">
-              Ravi de vous revoir. Que souhaitez-vous faire aujourd'hui ?
+            <p className="text-slate-600 mt-2 font-medium">
+              Générez votre signature officielle chartée et exportez-la directement pour Outlook.
             </p>
           </motion.div>
 
@@ -50,18 +54,18 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 group cursor-pointer"
+              className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all p-7 border border-slate-200/80 group cursor-pointer"
               onClick={() => router.push('/dashboard')}
             >
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
-                <FileText className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+              <div className="w-12 h-12 bg-[#004976]/10 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-[#004976] transition-colors">
+                <FileText className="w-6 h-6 text-[#004976] group-hover:text-white transition-colors" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Générer ma signature</h3>
-              <p className="text-gray-500 text-sm mb-4">
-                Créez votre signature officielle ESPI en quelques secondes à partir de vos données.
+              <h3 className="text-lg font-bold text-[#002D4A] mb-2">Générer ma signature</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-5 font-medium">
+                Générez votre signature officielle ESPI 2026 en 1 clic grâce à votre compte Microsoft 365.
               </p>
-              <div className="flex items-center text-blue-600 font-medium text-sm">
-                Commencer <ArrowRight className="w-4 h-4 ml-1" />
+              <div className="flex items-center text-[#004976] font-bold text-xs">
+                Accéder au générateur <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </motion.div>
 
@@ -70,18 +74,18 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 group cursor-pointer"
+              className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all p-7 border border-slate-200/80 group cursor-pointer"
               onClick={() => router.push('/tutorial')}
             >
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                <PlayCircle className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+              <div className="w-12 h-12 bg-[#47B5E0]/10 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-[#47B5E0] transition-colors">
+                <PlayCircle className="w-6 h-6 text-[#47B5E0] group-hover:text-white transition-colors" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Comment ça marche ?</h3>
-              <p className="text-gray-500 text-sm mb-4">
-                Consultez le guide étape par étape pour installer votre signature dans Outlook.
+              <h3 className="text-lg font-bold text-[#002D4A] mb-2">Guide d&apos;installation</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-5 font-medium">
+                Consultez le guide étape par étape pour installer votre signature dans Outlook Web et Desktop.
               </p>
-              <div className="flex items-center text-purple-600 font-medium text-sm">
-                Voir le tutoriel <ArrowRight className="w-4 h-4 ml-1" />
+              <div className="flex items-center text-[#47B5E0] font-bold text-xs">
+                Voir le tutoriel <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </motion.div>
 
@@ -90,17 +94,17 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 group cursor-pointer"
+              className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all p-7 border border-slate-200/80 group cursor-pointer"
             >
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-600 transition-colors">
-                <CheckCircle className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-emerald-600 transition-colors">
+                <CheckCircle className="w-6 h-6 text-emerald-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Mon Compte</h3>
-              <p className="text-gray-500 text-sm mb-4">
-                Connecté en tant que {session.user?.email}. Votre session est active et sécurisée.
+              <h3 className="text-lg font-bold text-[#002D4A] mb-2">Compte Microsoft</h3>
+              <p className="text-slate-500 text-xs leading-relaxed mb-5 font-medium">
+                Connecté en tant que <span className="font-semibold text-slate-800">{session.user?.email}</span>. Données synchronisées.
               </p>
-              <div className="flex items-center text-green-600 font-medium text-sm">
-                Géré par Microsoft <Shield className="w-3 h-3 ml-1" />
+              <div className="flex items-center text-emerald-600 font-bold text-xs">
+                Sécurisé par Azure AD <Shield className="w-3.5 h-3.5 ml-1.5" />
               </div>
             </motion.div>
           </div>
@@ -113,22 +117,26 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+      <header className="fixed w-full bg-white/95 backdrop-blur-md z-50 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">SignatureApp</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/charte/LOGO ESPI/Bleu/RVB/PNG/ESPI_logos_horizontal_bleu_RVB.png" 
+                alt="Groupe ESPI" 
+                className="h-9 w-auto object-contain"
+              />
+              <span className="hidden sm:inline-block text-xs font-bold text-[#004976] pl-2 border-l border-slate-300">
+                SignatureApp
+              </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/tutorial" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              <Link href="/tutorial" className="text-xs font-bold text-slate-600 hover:text-[#004976]">
                 Tutoriel
               </Link>
               <button
                 onClick={() => setIsLoginModalOpen(true)}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="bg-[#004976] text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#003a5e] transition-all shadow-md shadow-[#004976]/20"
               >
                 Se connecter
               </button>
@@ -138,87 +146,87 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="pt-36 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#F2F6F8] via-white to-white">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-6 border border-blue-100">
-              <Zap className="w-4 h-4 mr-2" />
-              Nouvelle version disponible
+            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#004976]/10 text-[#004976] text-xs font-bold mb-6 border border-[#004976]/20 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 mr-2 text-[#47B5E0]" />
+              Nouvelle Charte Graphique ESPI 2026
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
-              Vos signatures email,<br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                professionnelles et unifiées.
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#002D4A] mb-6 tracking-tight">
+              Vos signatures d&apos;email officielles,<br />
+              <span className="text-[#004976]">
+                chartées et unifiées.
               </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Générez automatiquement votre signature Outlook chartée Groupe ESPI en connectant simplement votre compte Microsoft.
+            <p className="text-base sm:text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+              Générez instantanément votre signature Outlook aux normes officielles du Groupe ESPI en vous connectant simplement avec votre compte Microsoft 365.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => setIsLoginModalOpen(true)}
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200"
+                className="inline-flex items-center justify-center px-8 py-4 text-sm font-bold rounded-2xl text-white bg-[#004976] hover:bg-[#003a5e] transition-all shadow-xl shadow-[#004976]/30 hover:scale-102"
               >
-                <LogIn className="w-5 h-5 mr-2" />
+                <LogIn className="w-4 h-4 mr-2 text-[#47B5E0]" />
                 Connexion Microsoft
               </button>
               <Link
                 href="/tutorial"
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all"
+                className="inline-flex items-center justify-center px-8 py-4 text-sm font-bold rounded-2xl text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all shadow-sm"
               >
-                <PlayCircle className="w-5 h-5 mr-2" />
+                <PlayCircle className="w-4 h-4 mr-2 text-[#004976]" />
                 Voir le tutoriel
               </Link>
             </div>
           </motion.div>
 
-          {/* Preview Image / Visual */}
+          {/* Aperçu Visuel Animé */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="mt-20 relative max-w-4xl mx-auto"
+            className="mt-16 relative max-w-4xl mx-auto"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-3xl opacity-10 rounded-full transform scale-75"></div>
-            <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#004976] to-[#47B5E0] blur-3xl opacity-15 rounded-full transform scale-75"></div>
+            <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-200 p-2.5 overflow-hidden">
               <AnimatedSignaturePreview />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-20 bg-gray-50 border-t border-gray-100">
+      {/* Avantages */}
+      <section className="py-20 bg-[#F8FAFC] border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 icon: Shield,
                 title: "100% Sécurisé",
-                desc: "Connexion via Microsoft Azure AD. Vos données restent confidentielles."
+                desc: "Authentification directe via Microsoft Azure AD. Aucune conservation de mot de passe."
               },
               {
                 icon: Zap,
-                title: "Instantané",
-                desc: "Génération automatique à partir de votre profil. Pas de saisie manuelle."
+                title: "Instantané & Automatisé",
+                desc: "Auto-détection de vos coordonnées et de votre campus ESPI via Microsoft Graph API."
               },
               {
                 icon: CheckCircle,
-                title: "Conforme",
-                desc: "Respecte scrupuleusement la charte graphique du Groupe ESPI."
+                title: "100% Conforme 2026",
+                desc: "Respecte scrupuleusement le guide de marque et les normes officielles du Groupe ESPI."
               }
             ].map((feature, i) => (
-              <div key={i} className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 text-blue-600">
-                  <feature.icon className="w-6 h-6" />
+              <div key={i} className="flex flex-col items-center text-center p-6 bg-white rounded-3xl border border-slate-200/80 shadow-sm">
+                <div className="w-12 h-12 bg-[#004976]/10 rounded-2xl flex items-center justify-center mb-4 text-[#004976]">
+                  <feature.icon className="w-6 h-6 text-[#004976]" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.desc}</p>
+                <h3 className="text-base font-bold text-[#002D4A] mb-2">{feature.title}</h3>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
               </div>
             ))}
           </div>

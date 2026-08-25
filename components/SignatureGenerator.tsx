@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { useGraphProfile } from "@/hooks/useGraphApi";
 import { 
   FileText, 
-  Download, 
   Loader2, 
   CheckCircle, 
   XCircle, 
@@ -22,6 +21,7 @@ import {
   Building2 
 } from "lucide-react";
 import SignaturePreview from "./SignaturePreview";
+import SignatureExport from "./SignatureExport";
 import EmailSimulator from "./EmailSimulator";
 import ToastNotification, { ToastMessage, ToastType } from "./ToastNotification";
 import html2canvas from "html2canvas";
@@ -44,19 +44,21 @@ const INDICATIFS_PAYS = [
   { code: 'CA', nom: 'Canada', indicatif: '+1' }
 ];
 
-// Fonction pour formater un numéro de téléphone avec des espaces pour une meilleure lisibilité
 const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
   if (!phone) return '';
 
-  let cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
+  const cleanPhone = phone.replace(/\s/g, '').replace(/[-.]/g, '');
 
   if (indicatifPays === 'FR') {
-    if (cleanPhone.length > 0 && !cleanPhone.startsWith('0')) {
-      cleanPhone = '0' + cleanPhone;
+    let phoneToFormat = cleanPhone;
+    if (phoneToFormat.length === 9 && !phoneToFormat.startsWith('0')) {
+      phoneToFormat = '0' + phoneToFormat;
     }
-    return cleanPhone.match(/.{1,2}/g)?.join(' ') || cleanPhone;
+    if (phoneToFormat.length === 10 && phoneToFormat.startsWith('0')) {
+      return `${phoneToFormat.slice(0, 2)} ${phoneToFormat.slice(2, 4)} ${phoneToFormat.slice(4, 6)} ${phoneToFormat.slice(6, 8)} ${phoneToFormat.slice(8)}`;
+    }
+    return phoneToFormat.match(/.{1,2}/g)?.join(' ') || phoneToFormat;
   } else if (indicatifPays === 'CA') {
-    if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
     if (cleanPhone.length === 10) {
       return `${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6)}`;
     }
@@ -66,13 +68,11 @@ const formatPhoneNumber = (phone: string, indicatifPays: string): string => {
   return cleanPhone;
 };
 
-// Fonction pour nettoyer le numéro de téléphone (enlever les espaces pour stockage)
 const cleanPhoneNumber = (phone: string): string => {
   if (!phone) return '';
   return phone.replace(/\s/g, '').replace(/[-.]/g, '');
 };
 
-// Base de données des adresses avec villes et codes postaux correspondants
 const ADRESSES_REFERENCE = [
   { id: "levallois", label: "Levallois-Perret", adresse: "12 rue Belgrand", ville: "LEVALLOIS-PERRET", codePostal: "92300", pays: "FR" },
   { id: "paris", label: "Paris 15e", adresse: "23 rue Cronstadt", ville: "PARIS", codePostal: "75015", pays: "FR" },
@@ -145,7 +145,6 @@ export default function SignatureGenerator() {
       const userFonction = profile?.jobTitle || '';
       const userPhone = profile?.mobilePhone || '';
 
-      // Tenter d'auto-détecter le campus depuis officeLocation, department ou city
       const defaultAddress = ADRESSES_REFERENCE[1] || ADRESSES_REFERENCE[0]; // Défaut Paris
       let matchedAddress = defaultAddress;
       const locText = `${profile?.officeLocation || ''} ${profile?.department || ''}`.toLowerCase();
@@ -248,22 +247,22 @@ export default function SignatureGenerator() {
     }
 
     return `
-<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #333333; line-height: 1.4; border-collapse: collapse;">
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #ffffff; background-color: #004976; border-radius: 8px; border-collapse: collapse; min-width: 540px; max-width: 620px;">
   <tr>
-    <td style="padding: 12px 18px; background-color: #2c5aa0; color: #ffffff; border-radius: 6px 6px 0 0;" colspan="2">
-      <div style="font-size: 20px; font-weight: bold; letter-spacing: 0.5px;">ESPI</div>
-      <div style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">FORMER À L'IMMOBILIER DE DEMAIN</div>
+    <td style="padding: 24px 18px 24px 24px; vertical-align: middle; text-align: center; width: 140px; border-right: 1px solid rgba(255,255,255,0.2);">
+      <a href="https://www.groupe-espi.fr" target="_blank" style="text-decoration: none; display: block;">
+        <img src="https://signature.groupe-espi.fr/charte/LOGO%20ESPI/Contour/PNG/ESPI_logo_vertical_CONTOUR.png" alt="ESPI" width="95" style="width: 95px; max-width: 95px; height: auto; display: block; margin: 0 auto 8px auto; border: 0;" />
+      </a>
+      <div style="font-size: 8.5px; color: #e6edf1; font-weight: 600; line-height: 1.25; margin-top: 4px;">École Supérieure des Professions Immobilières</div>
     </td>
-  </tr>
-  <tr>
-    <td style="padding: 16px 18px; background-color: #f8fafc; border-left: 4px solid #2c5aa0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
-      <div style="font-size: 16px; font-weight: bold; color: #1e3a8a; margin-bottom: 4px;">${fullName}</div>
-      ${fonction ? `<div style="font-size: 13px; color: #475569; font-weight: 500; margin-bottom: 10px;">${fonction}</div>` : ''}
+    <td style="padding: 22px 30px 22px 32px; vertical-align: middle; color: #ffffff; font-family: Arial, Helvetica, sans-serif;">
+      <div style="font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 4px; letter-spacing: 0.2px;">${fullName}</div>
+      ${fonction ? `<div style="font-size: 13px; color: #ffffff; opacity: 0.95; margin-bottom: 12px; line-height: 1.35;">${fonction}</div>` : ''}
       
-      ${phoneDisplay ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">📞 <a href="tel:${telephone}" style="color: #2c5aa0; text-decoration: none; font-weight: 500;">${phoneDisplay}</a></div>` : ''}
-      ${fullAddress ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">📍 ${fullAddress}</div>` : ''}
-      ${email ? `<div style="font-size: 12px; color: #334155; margin-bottom: 4px;">✉️ <a href="mailto:${email}" style="color: #2c5aa0; text-decoration: none;">${email}</a></div>` : ''}
-      <div style="font-size: 12px; color: #334155;">🌐 <a href="https://www.groupe-espi.fr" target="_blank" style="color: #2c5aa0; text-decoration: none; font-weight: bold;">www.groupe-espi.fr</a></div>
+      ${phoneDisplay ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">📞 <a href="tel:${telephone}" style="color: #ffffff; text-decoration: none;">${phoneDisplay}</a></div>` : ''}
+      ${fullAddress ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">📍 ${fullAddress}</div>` : ''}
+      ${email ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">✉️ <a href="mailto:${email}" style="color: #ffffff; text-decoration: none;">${email}</a></div>` : ''}
+      <div style="font-size: 12px; margin-top: 8px;">🌐 <a href="https://www.groupe-espi.fr" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: bold;">www.groupe-espi.fr</a></div>
     </td>
   </tr>
 </table>
@@ -273,7 +272,7 @@ export default function SignatureGenerator() {
   const generatePlainText = () => {
     const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
     const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(' ');
-    return `${prenom} ${nom}\n${fonction}\nTél: ${telephone}\nAdresse: ${fullAddress}\nEmail: ${email}\nWeb: www.groupe-espi.fr`;
+    return `${prenom} ${nom}\n${fonction}\nTél: ${telephone}\nCampus: ${fullAddress}\nEmail: ${email}\nWeb: www.groupe-espi.fr`;
   };
 
   const copySignatureHtmlToClipboard = async () => {
@@ -295,7 +294,7 @@ export default function SignatureGenerator() {
       }
 
       setIsCopiedHtml(true);
-      addToast("success", "Signature copiée !", "La signature HTML pour Outlook a été copiée dans votre presse-papier.");
+      addToast("success", "Signature copiée !", "La signature HTML officielle ESPI 2026 a été copiée dans votre presse-papier.");
       setTimeout(() => setIsCopiedHtml(false), 3000);
     } catch (err) {
       console.error("Erreur de copie dans le presse-papier:", err);
@@ -312,8 +311,8 @@ export default function SignatureGenerator() {
     try {
       const buildSteps = [
         { progress: 20, message: "Préparation des données..." },
-        { progress: 50, message: "Construction du design ESPI..." },
-        { progress: 80, message: "Finalisation de la signature..." },
+        { progress: 50, message: "Application de la charte ESPI 2026..." },
+        { progress: 80, message: "Finalisation du rendu HD..." },
         { progress: 100, message: "Signature prête !" }
       ];
 
@@ -323,7 +322,7 @@ export default function SignatureGenerator() {
       }
 
       setGenerationStatus('success');
-      addToast("success", "Signature générée !", "Votre signature est disponible pour le téléchargement PNG ou la copie HTML.");
+      addToast("success", "Signature générée !", "Votre signature officielle ESPI 2026 est prête.");
     } catch (error) {
       console.error("Erreur lors de la génération:", error);
       setGenerationStatus('error');
@@ -348,11 +347,12 @@ export default function SignatureGenerator() {
         scale: 1,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
+        backgroundColor: '#004976',
         width: 2200,
         height: 700,
         windowWidth: 2200,
         windowHeight: 700,
+        logging: false,
       });
 
       canvas.toBlob(async (blob) => {
@@ -360,14 +360,14 @@ export default function SignatureGenerator() {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `signature-${userData.prenom}-${userData.nom}.png`;
+          a.download = `signature-espi-${userData.prenom}-${userData.nom}.png`;
           document.body.appendChild(a);
           a.click();
 
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
 
-          addToast("success", "Image PNG téléchargée !", "Fichier enregistré dans vos téléchargements.");
+          addToast("success", "Image PNG téléchargée !", "Fichier enregistré aux normes officielles.");
 
           // Envoyer automatiquement par email
           await sendSignatureByEmail(canvas.toDataURL('image/png'));
@@ -405,7 +405,7 @@ export default function SignatureGenerator() {
 
       if (result.success) {
         setEmailSent(true);
-        addToast("success", "Email envoyé !", `Signature envoyée à ${emailToSend}`);
+        addToast("success", "Email envoyé !", `Signature transmise à ${emailToSend}`);
         setTimeout(() => {
           setEmailSent(false);
         }, 3000);
@@ -420,108 +420,97 @@ export default function SignatureGenerator() {
     }
   };
 
-  const getStatusIcon = () => {
-    switch (generationStatus) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Sparkles className="w-5 h-5 text-blue-500" />;
-    }
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100 relative">
+    <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8 border border-slate-200/80 relative">
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />
 
       {/* Header Formulaire */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 pb-6 border-b border-slate-100">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-3 text-blue-600">
+          <div className="w-12 h-12 bg-[#004976]/10 rounded-2xl flex items-center justify-center mr-3.5 text-[#004976]">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Générateur de Signature ESPI</h3>
-            <p className="text-sm text-gray-500">Personnalisez votre signature chartée Groupe ESPI</p>
+            <h3 className="text-xl font-bold text-[#004976]">Générateur de Signature ESPI</h3>
+            <p className="text-xs text-slate-500 font-medium">Nouvelle Charte Graphique Officielle 2026</p>
           </div>
         </div>
 
         {session?.user && (
-          <div className="inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
-            <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+          <div className="inline-flex items-center text-xs font-semibold text-[#004976] bg-[#004976]/10 border border-[#004976]/20 px-3.5 py-1.5 rounded-full shadow-sm">
+            <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-[#47B5E0]" />
             Compte Microsoft connecté
           </div>
         )}
       </div>
 
       {detectionMessage && (
-        <div className="mb-6 text-sm text-blue-800 bg-blue-50 p-3 rounded-xl border border-blue-200 flex items-center">
-          <Sparkles className="w-4 h-4 mr-2 text-blue-600 shrink-0" />
+        <div className="mb-6 text-xs font-semibold text-[#004976] bg-[#E6EDF1] p-3.5 rounded-2xl border border-[#BFD2DD] flex items-center shadow-sm">
+          <Sparkles className="w-4 h-4 mr-2 text-[#47B5E0] shrink-0" />
           <span>{detectionMessage}</span>
         </div>
       )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="ml-3 text-gray-600 font-medium">Chargement du profil...</span>
+          <Loader2 className="w-8 h-8 animate-spin text-[#004976]" />
+          <span className="ml-3 text-slate-600 font-medium">Chargement du profil...</span>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Champs de Saisie */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                <User className="w-4 h-4 inline mr-1.5 text-gray-400" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
                 Prénom *
               </label>
               <input
                 type="text"
                 value={userData.prenom}
                 onChange={(e) => handleInputChange('prenom', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
                 placeholder="Votre prénom"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                <User className="w-4 h-4 inline mr-1.5 text-gray-400" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
                 Nom *
               </label>
               <input
                 type="text"
                 value={userData.nom}
                 onChange={(e) => handleInputChange('nom', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
                 placeholder="Votre nom"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                <Briefcase className="w-4 h-4 inline mr-1.5 text-gray-400" />
-                Fonction
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                Fonction / Titre
               </label>
               <input
                 type="text"
                 value={userData.fonction}
                 onChange={(e) => handleInputChange('fonction', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
-                placeholder="Ex: Directeur de Formation, Enseignant..."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                placeholder="Ex: Directeur de Campus, Responsable Pédagogique..."
               />
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                   Pays
                 </label>
                 <select
                   value={userData.indicatifPays}
                   onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
-                  className="w-full px-2.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium transition-all"
+                  className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 font-semibold transition-all text-sm"
                 >
                   {INDICATIFS_PAYS.map((pays) => (
                     <option key={pays.code} value={pays.code}>
@@ -531,15 +520,15 @@ export default function SignatureGenerator() {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  <Phone className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <Phone className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
                   Téléphone
                 </label>
                 <input
                   type="tel"
                   value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
                   onChange={(e) => handleInputChange('telephone', e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
                   placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
                 />
               </div>
@@ -547,9 +536,9 @@ export default function SignatureGenerator() {
 
             {/* Puces / Chips de Sélection Rapide du Campus */}
             <div className="md:col-span-2 space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">
-                <Building2 className="w-4 h-4 inline mr-1.5 text-gray-400" />
-                Sélection Rapide du Campus ESPI
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                Campus ESPI
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {ADRESSES_REFERENCE.map((campus) => {
@@ -559,13 +548,13 @@ export default function SignatureGenerator() {
                       key={campus.id}
                       type="button"
                       onClick={() => selectCampus(campus.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 border ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
                         isSelected
-                          ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                          : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                          ? "bg-[#004976] text-white border-[#004976] shadow-md shadow-[#004976]/20"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
                       }`}
                     >
-                      <MapPin className="w-3 h-3" />
+                      <MapPin className={`w-3 h-3 ${isSelected ? "text-[#47B5E0]" : "text-slate-400"}`} />
                       {campus.label}
                     </button>
                   );
@@ -574,15 +563,15 @@ export default function SignatureGenerator() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <Mail className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
                 Adresse Email Pro
               </label>
               <input
                 type="email"
                 value={userData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
                 placeholder="prenom.nom@groupe-espi.fr"
               />
             </div>
@@ -590,20 +579,20 @@ export default function SignatureGenerator() {
 
           {/* Animation de Construction */}
           {isBuildingSignature && (
-            <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+            <div className="p-6 bg-gradient-to-r from-[#E6EDF1] to-[#F2F6F8] rounded-2xl border border-[#BFD2DD]">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                  <Loader2 className="w-6 h-6 text-[#004976] animate-spin" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-blue-900 mb-1">Génération de la signature</h3>
-                  <div className="w-full bg-blue-200 rounded-full h-2.5 mb-1.5">
+                  <h3 className="text-sm font-bold text-[#004976] mb-1">Génération de la signature aux normes ESPI 2026</h3>
+                  <div className="w-full bg-[#BFD2DD] rounded-full h-2 mb-1.5">
                     <div
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                      className="bg-[#004976] h-2 rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${buildProgress}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-blue-700 font-medium">{buildProgress}% terminé</p>
+                  <p className="text-xs text-[#336D91] font-semibold">{buildProgress}% terminé</p>
                 </div>
               </div>
             </div>
@@ -614,9 +603,9 @@ export default function SignatureGenerator() {
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="px-5 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-all flex items-center gap-2 text-sm"
+              className="px-5 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-2 text-xs"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-4 h-4 text-slate-500" />
               <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu'}</span>
             </button>
 
@@ -624,12 +613,12 @@ export default function SignatureGenerator() {
               type="button"
               onClick={generateSignature}
               disabled={isGenerating || !userData.prenom || !userData.nom}
-              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-blue-200 flex items-center gap-2 text-sm"
+              className="px-6 py-3 bg-[#004976] text-white font-bold rounded-xl hover:bg-[#003a5e] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#004976]/25 flex items-center gap-2 text-xs"
             >
               {isGenerating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                getStatusIcon()
+                <Sparkles className="w-4 h-4 text-[#47B5E0]" />
               )}
               <span>Générer ma signature</span>
             </button>
@@ -638,16 +627,16 @@ export default function SignatureGenerator() {
             <button
               type="button"
               onClick={copySignatureHtmlToClipboard}
-              className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md flex items-center gap-2 text-sm ${
+              className={`px-6 py-3 font-bold rounded-xl transition-all shadow-md flex items-center gap-2 text-xs ${
                 isCopiedHtml
                   ? "bg-emerald-600 text-white"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200"
+                  : "bg-[#002D4A] text-white hover:bg-[#001D30] shadow-[#002D4A]/20"
               }`}
             >
               {isCopiedHtml ? (
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4 text-white" />
               ) : (
-                <Copy className="w-4 h-4" />
+                <Copy className="w-4 h-4 text-[#47B5E0]" />
               )}
               <span>{isCopiedHtml ? 'Copié !' : 'Copier pour Outlook (HTML)'}</span>
             </button>
@@ -657,7 +646,7 @@ export default function SignatureGenerator() {
                 type="button"
                 onClick={downloadSignature}
                 disabled={isDownloading || isSendingEmail}
-                className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-emerald-200 flex items-center gap-2 text-sm"
+                className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-emerald-200 flex items-center gap-2 text-xs"
               >
                 {isDownloading || isSendingEmail ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -678,16 +667,16 @@ export default function SignatureGenerator() {
 
           {/* Zone de Prévisualisation Interactives */}
           {showPreview && (
-            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
+            <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl">
                   <button
                     type="button"
                     onClick={() => setPreviewTab("simulator")}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                       previewTab === "simulator"
-                        ? "bg-white text-blue-700 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
+                        ? "bg-white text-[#004976] shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     💌 Simulateur Mail (Mode Sombre / Clair)
@@ -695,18 +684,18 @@ export default function SignatureGenerator() {
                   <button
                     type="button"
                     onClick={() => setPreviewTab("direct")}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                       previewTab === "direct"
-                        ? "bg-white text-blue-700 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
+                        ? "bg-white text-[#004976] shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    🖼️ Rendu Graphique Brut (2200x700)
+                    🖼️ Rendu Graphique Brut HD (2200x700)
                   </button>
                 </div>
 
-                <div className="text-xs text-gray-500 font-medium">
-                  {previewTab === "simulator" ? "Rendu dans un vrai client mail Outlook" : "Rendu visuel d'origine pour l'export image"}
+                <div className="text-xs text-slate-500 font-medium">
+                  {previewTab === "simulator" ? "Rendu dans un vrai client mail Outlook" : "Gabarit officiel HD"}
                 </div>
               </div>
 
@@ -717,7 +706,7 @@ export default function SignatureGenerator() {
                   onDownloadPng={downloadSignature}
                 />
               ) : (
-                <div className="w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100" ref={previewRef}>
+                <div className="w-full rounded-2xl overflow-hidden shadow-xl border border-slate-200" ref={previewRef}>
                   <SignaturePreview userData={userData} />
                 </div>
               )}
@@ -729,17 +718,20 @@ export default function SignatureGenerator() {
       {/* Conteneur caché pour le rendu PNG 2200x700 */}
       <div
         style={{
-          position: 'absolute',
-          left: '-9999px',
-          top: '-9999px',
+          position: 'fixed',
+          left: '0px',
+          top: '0px',
           width: '2200px',
           height: '700px',
+          zIndex: -9999,
+          opacity: 0,
+          pointerEvents: 'none',
           overflow: 'hidden'
         }}
         data-hidden-preview
       >
-        <div ref={hiddenPreviewRef} style={{ width: '2200px', height: '700px' }}>
-          <SignaturePreview userData={userData} />
+        <div ref={hiddenPreviewRef} style={{ width: '2200px', height: '700px', backgroundColor: '#004976' }}>
+          <SignatureExport userData={userData} />
         </div>
       </div>
     </div>

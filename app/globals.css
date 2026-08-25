@@ -1,27 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #002d4a;
+  
+  /* Palette Officielle ESPI 2026 */
+  --espi-bleu-elevation: #004976;
+  --espi-bleu-elevation-80: #336d91;
+  --espi-bleu-elevation-50: #80a4bb;
+  --espi-bleu-elevation-25: #bfd2dd;
+  --espi-bleu-elevation-10: #e6edf1;
+  --espi-bleu-elevation-5: #f2f6f8;
+
+  --espi-bleu-excellence: #47b5e0;
+  --espi-rose-visionnaire: #ff7d97;
+  --espi-ocre-academique: #ffb461;
+
+  --font-espi-main: var(--font-commissioner), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-espi-serif: var(--font-pt-serif), Georgia, serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-poppins: var(--font-poppins);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-commissioner);
+  --font-serif: var(--font-pt-serif);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-espi-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utilitaires Spécifiques ESPI */
+.bg-espi-blue {
+  background-color: var(--espi-bleu-elevation);
+}
+
+.text-espi-blue {
+  color: var(--espi-bleu-elevation);
+}
+
+.border-espi-blue {
+  border-color: var(--espi-bleu-elevation);
+}
+
+.bg-espi-excellence {
+  background-color: var(--espi-bleu-excellence);
+}
+
+.text-espi-excellence {
+  color: var(--espi-bleu-excellence);
+}
+
+.bg-espi-gradient {
+  background: linear-gradient(135deg, #004976 0%, #002d4a 100%);
+}
+
+.bg-espi-gradient-subtle {
+  background: linear-gradient(135deg, #f2f6f8 0%, #ffffff 100%);
 }

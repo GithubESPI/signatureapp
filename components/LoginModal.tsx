@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Shield, FileText, Mail, Zap, CheckCircle } from "lucide-react";
 import AzureLoginButton from "./AzureLoginButton";
@@ -13,167 +12,146 @@ interface LoginModalProps {
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const features = [
     {
-      icon: <FileText className="w-6 h-6 text-blue-600" />,
-      title: "Modèles Personnalisés",
-      description: "Accédez à vos modèles Word depuis Azure Storage"
+      icon: <FileText className="w-5 h-5 text-[#004976]" />,
+      title: "Charte Officielle 2026",
+      description: "Gabarit conforme aux directives de la marque ESPI"
     },
     {
-      icon: <Shield className="w-6 h-6 text-green-600" />,
-      title: "Sécurité Enterprise",
-      description: "Authentification sécurisée avec Azure AD"
+      icon: <Shield className="w-5 h-5 text-emerald-600" />,
+      title: "Sécurité Entreprise",
+      description: "Authentification via Microsoft Azure AD"
     },
     {
-      icon: <Mail className="w-6 h-6 text-purple-600" />,
-      title: "Envoi Automatique",
-      description: "Envoi direct dans votre boîte Outlook"
+      icon: <Mail className="w-5 h-5 text-[#47B5E0]" />,
+      title: "1-Click Copie Outlook",
+      description: "Code HTML optimisé avec liens interactifs"
     },
     {
-      icon: <Zap className="w-6 h-6 text-orange-600" />,
-      title: "Rapide & Efficace",
-      description: "Génération de signatures en quelques clics"
+      icon: <Zap className="w-5 h-5 text-[#FFB461]" />,
+      title: "Auto-Détection Campus",
+      description: "Pré-remplissage via Microsoft Graph API"
     }
   ];
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#001D30]/60 backdrop-blur-sm"
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden"
+            className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-slate-200"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-[#003A5E] via-[#004976] to-[#002D4A] p-6 text-white">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    <Shield className="w-6 h-6" />
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+                    <Shield className="w-5 h-5 text-[#47B5E0]" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">Connexion Sécurisée</h2>
-                    <p className="text-blue-100">Accédez à vos signatures personnalisées</p>
+                    <h2 className="text-lg font-bold">Connexion Microsoft 365</h2>
+                    <p className="text-xs text-[#E6EDF1] font-medium">Accédez à votre générateur de signature officiel ESPI</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                  className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Content */}
-            <div className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 {/* Login Section */}
                 <div className="space-y-6">
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Connectez-vous avec Microsoft
+                  <div className="text-left">
+                    <h3 className="text-base font-bold text-[#002D4A] mb-1">
+                      Identifiez-vous
                     </h3>
-                    <p className="text-gray-600">
-                      Utilisez votre compte professionnel Microsoft pour accéder à l'application
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                      Utilisez vos identifiants professionnels ESPI pour générer automatiquement votre signature.
                     </p>
                   </div>
 
-                  <div className="space-y-4">
+                  <div>
                     <AzureLoginButton 
                       className="w-full justify-center"
-                      size="lg"
+                      size="md"
                     />
-
-                    
                   </div>
 
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">
-                      Pourquoi se connecter ?
+                  <div className="bg-[#F2F6F8] rounded-2xl p-4 border border-[#BFD2DD]">
+                    <h4 className="font-bold text-[#004976] text-xs mb-2">
+                      Avantages du compte connecté :
                     </h4>
-                    <ul className="space-y-2 text-sm text-blue-800">
+                    <ul className="space-y-2 text-xs text-slate-700 font-medium">
                       <li className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                        <span>Accès à vos modèles Word personnalisés</span>
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Récupération automatique de votre poste</span>
                       </li>
                       <li className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                        <span>Envoi automatique dans votre Outlook</span>
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Sélection instantanée de votre campus</span>
                       </li>
                       <li className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                        <span>Sécurité et conformité enterprise</span>
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Envoi direct par email dans votre Outlook</span>
                       </li>
                     </ul>
                   </div>
                 </div>
 
                 {/* Features Section */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                      Fonctionnalités Avancées
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Découvrez comment SignatureApp peut transformer votre workflow
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
                     {features.map((feature, index) => (
                       <motion.div
                         key={index}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                        className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 flex items-start space-x-3"
                       >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 p-2 bg-white rounded-lg shadow-sm">
-                            {feature.icon}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900 text-sm mb-1">
-                              {feature.title}
-                            </h4>
-                            <p className="text-gray-600 text-xs">
-                              {feature.description}
-                            </p>
-                          </div>
+                        <div className="p-2 bg-white rounded-xl shadow-sm shrink-0 border border-slate-200">
+                          {feature.icon}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[#002D4A] text-xs mb-0.5">
+                            {feature.title}
+                          </h4>
+                          <p className="text-slate-500 text-[11px] font-medium leading-tight">
+                            {feature.description}
+                          </p>
                         </div>
                       </motion.div>
                     ))}
                   </div>
-
-                  
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div className="flex items-center space-x-4">
-                  <span>Powered by Groupe ESPI</span>
-                  <span>•</span>
-                  <span>Groupe ESPI</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Service actif</span>
-                </div>
+            <div className="bg-slate-50 px-8 py-3.5 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
+              <span>Groupe ESPI • Direction Marketing &amp; DSIT</span>
+              <div className="flex items-center space-x-1.5 text-emerald-600 font-semibold">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span>Service actif</span>
               </div>
             </div>
           </motion.div>
