@@ -84,7 +84,7 @@ const ADRESSES_REFERENCE = [
   { id: "montpellier", label: "Montpellier", adresse: "53 avenue Georges Clémenceau", ville: "Montpellier", codePostal: "34000", pays: "FR" },
   { id: "lille", label: "Lille", adresse: "8 Rue de Tournai", ville: "Lille", codePostal: "59800", pays: "FR" },
   { id: "montreal", label: "Montréal (CA)", adresse: "507 Place d'Armes local 260", ville: "Montréal", codePostal: "H2Y 2W8", pays: "CA" },
-  { id: "aix", label: "Aix-en-Provence", adresse: "10 cours Sextius", ville: "Aix-en-Provence", codePostal: "13800", pays: "FR" }
+  { id: "aix", label: "Aix-en-Provence", adresse: "10 Cours Sextius", ville: "Aix-en-Provence", codePostal: "13100", pays: "FR" }
 ];
 
 export default function SignatureGenerator() {
