@@ -18,7 +18,8 @@ import {
   Save, 
   Copy, 
   Sparkles,
-  Building2 
+  Building2,
+  Image as ImageIcon 
 } from "lucide-react";
 import SignaturePreview from "./SignaturePreview";
 import SignatureExport from "./SignatureExport";
@@ -37,7 +38,20 @@ interface UserData {
   ville: string;
   codePostal: string;
   email: string;
+  nomService?: string;
 }
+
+const SERVICE_SUGGESTIONS = [
+  "Service Admissions",
+  "Relations Entreprises",
+  "Service Informatique",
+  "Direction Pédagogique",
+  "Service Comptabilité",
+  "Service Communication",
+  "Service Scolarité",
+  "Direction de Campus",
+  "Accueil & Standard"
+];
 
 const INDICATIFS_PAYS = [
   { code: 'FR', nom: 'France', indicatif: '+33' },
@@ -113,6 +127,62 @@ export default function SignatureGenerator() {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [isCopiedHtml, setIsCopiedHtml] = useState(false);
+  const [isCopiedImage, setIsCopiedImage] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [signatureType, setSignatureType] = useState<"collaborateur" | "service">("collaborateur");
+  const [savedPersonalData, setSavedPersonalData] = useState<Partial<UserData> | null>(null);
+  const [savedServiceData, setSavedServiceData] = useState<Partial<UserData>>({
+    nomService: '',
+    fonction: '',
+    email: '',
+    telephone: '',
+  });
+
+  const handleSwitchType = (type: "collaborateur" | "service") => {
+    if (type === signatureType) return;
+
+    if (type === "service") {
+      setSavedPersonalData({
+        prenom: userData.prenom,
+        nom: userData.nom,
+        fonction: userData.fonction,
+        telephone: userData.telephone,
+        email: userData.email,
+      });
+
+      setUserData(prev => ({
+        ...prev,
+        prenom: '',
+        nom: '',
+        nomService: savedServiceData.nomService || '',
+        fonction: savedServiceData.fonction || '',
+        telephone: savedServiceData.telephone || '',
+        email: savedServiceData.email || '',
+      }));
+      setSignatureType("service");
+      addToast("info", "Mode Boîte Collective", "Renseignez le nom du service et ses coordonnées génériques.");
+    } else {
+      setSavedServiceData({
+        nomService: userData.nomService || '',
+        fonction: userData.fonction || '',
+        telephone: userData.telephone || '',
+        email: userData.email || '',
+      });
+
+      setUserData(prev => ({
+        ...prev,
+        nomService: '',
+        prenom: savedPersonalData?.prenom || '',
+        nom: savedPersonalData?.nom || '',
+        fonction: savedPersonalData?.fonction || '',
+        telephone: savedPersonalData?.telephone || '',
+        email: savedPersonalData?.email || '',
+      }));
+      setSignatureType("collaborateur");
+      addToast("info", "Mode Collaborateur", "Vos coordonnées individuelles ont été restaurées.");
+    }
+  };
+
   const [previewTab, setPreviewTab] = useState<"simulator" | "direct">("simulator");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -213,9 +283,9 @@ export default function SignatureGenerator() {
   };
 
   const generateOutlookHtml = () => {
-    const { prenom, nom, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
+    const { prenom, nom, nomService, fonction, telephone, indicatifPays, adresse, ville, codePostal, email } = userData;
 
-    const fullName = `${prenom} ${nom}`;
+    const fullName = nomService ? nomService : `${prenom || 'Prénom'} ${nom || 'NOM'}`.trim();
     const cleanAdresse = adresse?.replace(/,/g, '')?.trim() || '';
     const cleanCodePostal = codePostal?.replace(/,/g, '')?.trim() || '';
     const cleanVille = ville?.replace(/,/g, '')?.trim() || '';
@@ -247,22 +317,49 @@ export default function SignatureGenerator() {
     }
 
     return `
-<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #ffffff; background-color: #004976; border-radius: 8px; border-collapse: collapse; min-width: 540px; max-width: 620px;">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<style type="text/css">
+  :root {
+    color-scheme: light dark;
+    supported-color-schemes: light dark;
+  }
+  .espi-card, [data-ogsb] .espi-card, [data-ogsb] table, [data-ogsb] td {
+    background-color: #004976 !important;
+    background: #004976 !important;
+    background-image: linear-gradient(0deg, #004976, #004976) !important;
+  }
+  .espi-white, [data-ogsc] .espi-white, [data-ogsc] font, [data-ogsc] td {
+    color: #ffffff !important;
+  }
+  .espi-sub, [data-ogsc] .espi-sub {
+    color: #e6edf1 !important;
+  }
+  .espi-link, [data-ogsc] .espi-link, [data-ogsc] a {
+    color: #ffffff !important;
+    text-decoration: none !important;
+  }
+</style>
+<table class="espi-card" cellpadding="0" cellspacing="0" border="0" bgcolor="#004976" data-ogsb="#004976" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #ffffff !important; background-color: #004976 !important; background: #004976 linear-gradient(0deg, #004976, #004976) !important; background-image: linear-gradient(0deg, #004976, #004976) !important; border-radius: 8px; border-collapse: collapse; min-width: 540px; max-width: 620px;">
   <tr>
-    <td style="padding: 24px 18px 24px 24px; vertical-align: middle; text-align: center; width: 140px; border-right: 1px solid rgba(255,255,255,0.2);">
+    <td class="espi-card" bgcolor="#004976" data-ogsb="#004976" style="padding: 24px 18px 24px 24px; vertical-align: middle; text-align: center; width: 140px; border-right: 1px solid #1a5b83; background-color: #004976 !important; background: #004976 linear-gradient(0deg, #004976, #004976) !important; background-image: linear-gradient(0deg, #004976, #004976) !important; color: #ffffff !important;">
       <a href="https://www.groupe-espi.fr" target="_blank" style="text-decoration: none; display: block;">
         <img src="https://signature.groupe-espi.fr/charte/LOGO%20ESPI/Contour/PNG/ESPI_logo_vertical_CONTOUR.png" alt="ESPI" width="95" style="width: 95px; max-width: 95px; height: auto; display: block; margin: 0 auto 8px auto; border: 0;" />
       </a>
-      <div style="font-size: 8.5px; color: #e6edf1; font-weight: 600; line-height: 1.25; margin-top: 4px;">École Supérieure des Professions Immobilières</div>
+      <div class="espi-sub" data-ogsc="#e6edf1" style="font-size: 8.5px; color: #e6edf1 !important; font-weight: 600; line-height: 1.25; margin-top: 4px;">
+        <font color="#e6edf1">École Supérieure des Professions Immobilières</font>
+      </div>
     </td>
-    <td style="padding: 22px 30px 22px 32px; vertical-align: middle; color: #ffffff; font-family: Arial, Helvetica, sans-serif;">
-      <div style="font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 4px; letter-spacing: 0.2px;">${fullName}</div>
-      ${fonction ? `<div style="font-size: 13px; color: #ffffff; opacity: 0.95; margin-bottom: 12px; line-height: 1.35;">${fonction}</div>` : ''}
+    <td class="espi-card" bgcolor="#004976" data-ogsb="#004976" style="padding: 22px 30px 22px 32px; vertical-align: middle; color: #ffffff !important; font-family: Arial, Helvetica, sans-serif; background-color: #004976 !important; background: #004976 linear-gradient(0deg, #004976, #004976) !important; background-image: linear-gradient(0deg, #004976, #004976) !important;">
+      <div class="espi-white" data-ogsc="#ffffff" style="font-size: 18px; font-weight: bold; color: #ffffff !important; margin-bottom: 4px; letter-spacing: 0.2px;">
+        <font color="#ffffff">${fullName}</font>
+      </div>
+      ${fonction ? `<div class="espi-white" data-ogsc="#ffffff" style="font-size: 13px; color: #ffffff !important; opacity: 0.95; margin-bottom: 12px; line-height: 1.35;"><font color="#ffffff">${fonction}</font></div>` : ''}
       
-      ${phoneDisplay ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">📞 <a href="tel:${telephone}" style="color: #ffffff; text-decoration: none;">${phoneDisplay}</a></div>` : ''}
-      ${fullAddress ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">📍 ${fullAddress}</div>` : ''}
-      ${email ? `<div style="font-size: 12px; color: #ffffff; opacity: 0.95; margin-bottom: 4px;">✉️ <a href="mailto:${email}" style="color: #ffffff; text-decoration: none;">${email}</a></div>` : ''}
-      <div style="font-size: 12px; margin-top: 8px;">🌐 <a href="https://www.groupe-espi.fr" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: bold;">www.groupe-espi.fr</a></div>
+      ${phoneDisplay ? `<div class="espi-white" data-ogsc="#ffffff" style="font-size: 12px; color: #ffffff !important; opacity: 0.95; margin-bottom: 4px;">📞 <a class="espi-link" data-ogsc="#ffffff" href="tel:${telephone}" style="color: #ffffff !important; text-decoration: none;"><font color="#ffffff">${phoneDisplay}</font></a></div>` : ''}
+      ${fullAddress ? `<div class="espi-white" data-ogsc="#ffffff" style="font-size: 12px; color: #ffffff !important; opacity: 0.95; margin-bottom: 4px;">📍 <font color="#ffffff">${fullAddress}</font></div>` : ''}
+      ${email ? `<div class="espi-white" data-ogsc="#ffffff" style="font-size: 12px; color: #ffffff !important; opacity: 0.95; margin-bottom: 4px;">✉️ <a class="espi-link" data-ogsc="#ffffff" href="mailto:${email}" style="color: #ffffff !important; text-decoration: none;"><font color="#ffffff">${email}</font></a></div>` : ''}
+      <div class="espi-white" data-ogsc="#ffffff" style="font-size: 12px; margin-top: 8px;">🌐 <a class="espi-link" data-ogsc="#ffffff" href="https://www.groupe-espi.fr" target="_blank" style="color: #ffffff !important; text-decoration: none; font-weight: bold;"><font color="#ffffff">www.groupe-espi.fr</font></a></div>
     </td>
   </tr>
 </table>
@@ -270,9 +367,10 @@ export default function SignatureGenerator() {
   };
 
   const generatePlainText = () => {
-    const { prenom, nom, fonction, telephone, adresse, ville, codePostal, email } = userData;
+    const { prenom, nom, nomService, fonction, telephone, adresse, ville, codePostal, email } = userData;
     const fullAddress = [adresse, codePostal, ville].filter(Boolean).join(' ');
-    return `${prenom} ${nom}\n${fonction}\nTél: ${telephone}\nCampus: ${fullAddress}\nEmail: ${email}\nWeb: www.groupe-espi.fr`;
+    const title = nomService ? nomService : `${prenom} ${nom}`.trim();
+    return `${title}${fonction ? `\n${fonction}` : ''}\nTél: ${telephone}\nCampus: ${fullAddress}\nEmail: ${email}\nWeb: www.groupe-espi.fr`;
   };
 
   const copySignatureHtmlToClipboard = async () => {
@@ -299,6 +397,55 @@ export default function SignatureGenerator() {
     } catch (err) {
       console.error("Erreur de copie dans le presse-papier:", err);
       addToast("error", "Erreur lors de la copie", "Impossible d'accéder au presse-papier. Veuillez réessayer.");
+    }
+  };
+
+  const copySignatureImageToClipboard = async () => {
+    if (!hiddenPreviewRef.current) {
+      addToast("error", "Erreur", "Génération de l'image impossible.");
+      return;
+    }
+
+    setIsCopyingImage(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(hiddenPreviewRef.current, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#004976',
+        width: 2200,
+        height: 700,
+        windowWidth: 2200,
+        windowHeight: 700,
+        logging: false,
+      });
+
+      canvas.toBlob(async (blob) => {
+        if (blob && navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                "image/png": blob,
+              }),
+            ]);
+            setIsCopiedImage(true);
+            addToast("success", "Image PNG copiée !", "L'image HD de la signature a été copiée. Vous pouvez la coller directement (Ctrl+V) dans votre email !");
+            setTimeout(() => setIsCopiedImage(false), 3000);
+          } catch (writeErr) {
+            console.error("Erreur écriture presse-papier:", writeErr);
+            addToast("error", "Erreur de copie", "Impossible de copier l'image dans le presse-papier.");
+          }
+        } else {
+          addToast("error", "Non supporté", "Votre navigateur ne permet pas la copie directe d'images.");
+        }
+        setIsCopyingImage(false);
+      }, 'image/png', 1.0);
+    } catch (err) {
+      console.error("Erreur génération image pour presse-papier:", err);
+      setIsCopyingImage(false);
+      addToast("error", "Erreur", "La création de l'image a échoué.");
     }
   };
 
@@ -360,7 +507,10 @@ export default function SignatureGenerator() {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `signature-espi-${userData.prenom}-${userData.nom}.png`;
+          const fileSuffix = userData.nomService
+            ? userData.nomService.toLowerCase().replace(/[^a-z0-9à-ÿ]/gi, '-').replace(/-+/g, '-')
+            : `${userData.prenom}-${userData.nom}`.toLowerCase().replace(/[^a-z0-9à-ÿ]/gi, '-');
+          a.download = `signature-espi-${fileSuffix}.png`;
           document.body.appendChild(a);
           a.click();
 
@@ -386,6 +536,7 @@ export default function SignatureGenerator() {
     setEmailSent(false);
 
     const emailToSend = session?.user?.email || userData.email;
+    const displayName = userData.nomService || `${userData.prenom} ${userData.nom}`;
 
     try {
       const response = await fetch('/api/send-signature-email', {
@@ -396,7 +547,7 @@ export default function SignatureGenerator() {
         body: JSON.stringify({
           signatureImage,
           userEmail: emailToSend,
-          userName: `${userData.prenom} ${userData.nom}`,
+          userName: displayName,
           accessToken: (session as { accessToken?: string })?.accessToken
         }),
       });
@@ -458,124 +609,301 @@ export default function SignatureGenerator() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Champs de Saisie */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                Prénom *
-              </label>
-              <input
-                type="text"
-                value={userData.prenom}
-                onChange={(e) => handleInputChange('prenom', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
-                placeholder="Votre prénom"
-              />
-            </div>
+          {/* Commutateur Type de Signature : Collaborateur vs Boîte Collective */}
+          <div className="flex p-1.5 bg-slate-100/90 rounded-2xl max-w-xl border border-slate-200 gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleSwitchType("collaborateur")}
+              className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                signatureType === "collaborateur"
+                  ? "bg-[#004976] text-white shadow-md shadow-[#004976]/20"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <User className="w-4 h-4 shrink-0" />
+              <span>Collaborateur (Individuel)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchType("service")}
+              className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                signatureType === "service"
+                  ? "bg-[#004976] text-white shadow-md shadow-[#004976]/20"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Building2 className="w-4 h-4 shrink-0" />
+              <span>Boîte Collective / Service</span>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 transition-all ${
+                  signatureType === "service"
+                    ? "bg-amber-400 text-[#002d4a] shadow-sm"
+                    : "bg-amber-100 text-amber-800 border border-amber-300/80"
+                }`}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-80"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span>Nouveau</span>
+              </span>
+            </button>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                Nom *
-              </label>
-              <input
-                type="text"
-                value={userData.nom}
-                onChange={(e) => handleInputChange('nom', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
-                placeholder="Votre nom"
-              />
-            </div>
+          {/* Formulaire selon le Type Sélectionné */}
+          {signatureType === "service" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Champ Libre : Nom du Service ou Boîte Générique */}
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                    Nom du Service ou de la Boîte Générique *
+                  </label>
+                  <span className="text-[11px] text-[#004976] font-semibold bg-[#004976]/10 px-2 py-0.5 rounded-md">
+                    Champ libre
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={userData.nomService || ''}
+                  onChange={(e) => handleInputChange('nomService', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-semibold text-sm shadow-sm"
+                  placeholder="Ex: Service Admissions, Service Informatique, Relations Entreprises..."
+                />
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                Fonction / Titre
-              </label>
-              <input
-                type="text"
-                value={userData.fonction}
-                onChange={(e) => handleInputChange('fonction', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
-                placeholder="Ex: Directeur de Campus, Responsable Pédagogique..."
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-1">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Pays
-                </label>
-                <select
-                  value={userData.indicatifPays}
-                  onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
-                  className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 font-semibold transition-all text-sm"
-                >
-                  {INDICATIFS_PAYS.map((pays) => (
-                    <option key={pays.code} value={pays.code}>
-                      {pays.code} ({pays.indicatif})
-                    </option>
-                  ))}
-                </select>
+                {/* Suggestions rapides en 1 clic */}
+                <div className="mt-2.5">
+                  <p className="text-[11px] text-slate-500 font-medium mb-1.5">Suggestions rapides (ou saisissez librement au-dessus) :</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SERVICE_SUGGESTIONS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => handleInputChange('nomService', suggestion)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
+                          userData.nomService === suggestion
+                            ? "bg-[#004976] text-white border-[#004976] shadow-sm"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="col-span-2">
+
+              {/* Sous-titre ou Mention Additionnelle */}
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  <Phone className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                  Téléphone
+                  <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Sous-titre / Pôle / Mention (Optionnel)
                 </label>
                 <input
-                  type="tel"
-                  value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
-                  onChange={(e) => handleInputChange('telephone', e.target.value)}
+                  type="text"
+                  value={userData.fonction}
+                  onChange={(e) => handleInputChange('fonction', e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
-                  placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
+                  placeholder="Ex: Groupe ESPI, Direction Générale, Pôle Alternance..."
+                />
+              </div>
+
+              {/* Téléphone du Service */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                    Pays
+                  </label>
+                  <select
+                    value={userData.indicatifPays}
+                    onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
+                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 font-semibold transition-all text-sm"
+                  >
+                    {INDICATIFS_PAYS.map((pays) => (
+                      <option key={pays.code} value={pays.code}>
+                        {pays.code} ({pays.indicatif})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                    <Phone className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                    Téléphone du Service
+                  </label>
+                  <input
+                    type="tel"
+                    value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
+                    onChange={(e) => handleInputChange('telephone', e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                    placeholder={userData.indicatifPays === 'FR' ? "01 45 67 89 00" : "514 555 1234"}
+                  />
+                </div>
+              </div>
+
+              {/* Puces / Chips de Sélection Rapide du Campus */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Campus de rattachement
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ADRESSES_REFERENCE.map((campus) => {
+                    const isSelected = userData.adresseId === campus.id;
+                    return (
+                      <button
+                        key={campus.id}
+                        type="button"
+                        onClick={() => selectCampus(campus.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+                          isSelected
+                            ? "bg-[#004976] text-white border-[#004976] shadow-md shadow-[#004976]/20"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        <MapPin className={`w-3 h-3 ${isSelected ? "text-[#47B5E0]" : "text-slate-400"}`} />
+                        {campus.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Email de la Boîte Collective */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <Mail className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Adresse Email de la Boîte Collective *
+                </label>
+                <input
+                  type="email"
+                  value={userData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                  placeholder="Ex: admissions@groupe-espi.fr, contact@groupe-espi.fr..."
                 />
               </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Prénom *
+                </label>
+                <input
+                  type="text"
+                  value={userData.prenom}
+                  onChange={(e) => handleInputChange('prenom', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                  placeholder="Votre prénom"
+                />
+              </div>
 
-            {/* Puces / Chips de Sélection Rapide du Campus */}
-            <div className="md:col-span-2 space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                Campus ESPI
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {ADRESSES_REFERENCE.map((campus) => {
-                  const isSelected = userData.adresseId === campus.id;
-                  return (
-                    <button
-                      key={campus.id}
-                      type="button"
-                      onClick={() => selectCampus(campus.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
-                        isSelected
-                          ? "bg-[#004976] text-white border-[#004976] shadow-md shadow-[#004976]/20"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
-                      }`}
-                    >
-                      <MapPin className={`w-3 h-3 ${isSelected ? "text-[#47B5E0]" : "text-slate-400"}`} />
-                      {campus.label}
-                    </button>
-                  );
-                })}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <User className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Nom *
+                </label>
+                <input
+                  type="text"
+                  value={userData.nom}
+                  onChange={(e) => handleInputChange('nom', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                  placeholder="Votre nom"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Fonction / Titre
+                </label>
+                <input
+                  type="text"
+                  value={userData.fonction}
+                  onChange={(e) => handleInputChange('fonction', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                  placeholder="Ex: Directeur de Campus, Responsable Pédagogique..."
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                    Pays
+                  </label>
+                  <select
+                    value={userData.indicatifPays}
+                    onChange={(e) => handleInputChange('indicatifPays', e.target.value)}
+                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 font-semibold transition-all text-sm"
+                  >
+                    {INDICATIFS_PAYS.map((pays) => (
+                      <option key={pays.code} value={pays.code}>
+                        {pays.code} ({pays.indicatif})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                    <Phone className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                    Téléphone
+                  </label>
+                  <input
+                    type="tel"
+                    value={formatPhoneNumber(userData.telephone, userData.indicatifPays)}
+                    onChange={(e) => handleInputChange('telephone', e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                    placeholder={userData.indicatifPays === 'FR' ? "06 12 34 56 78" : "514 555 1234"}
+                  />
+                </div>
+              </div>
+
+              {/* Puces / Chips de Sélection Rapide du Campus */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Campus ESPI
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ADRESSES_REFERENCE.map((campus) => {
+                    const isSelected = userData.adresseId === campus.id;
+                    return (
+                      <button
+                        key={campus.id}
+                        type="button"
+                        onClick={() => selectCampus(campus.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+                          isSelected
+                            ? "bg-[#004976] text-white border-[#004976] shadow-md shadow-[#004976]/20"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        <MapPin className={`w-3 h-3 ${isSelected ? "text-[#47B5E0]" : "text-slate-400"}`} />
+                        {campus.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <Mail className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
+                  Adresse Email Pro
+                </label>
+                <input
+                  type="email"
+                  value={userData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
+                  placeholder="prenom.nom@groupe-espi.fr"
+                />
               </div>
             </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                <Mail className="w-3.5 h-3.5 inline mr-1.5 text-[#47B5E0]" />
-                Adresse Email Pro
-              </label>
-              <input
-                type="email"
-                value={userData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#004976] focus:border-transparent text-slate-900 transition-all font-medium text-sm"
-                placeholder="prenom.nom@groupe-espi.fr"
-              />
-            </div>
-          </div>
+          )}
 
           {/* Animation de Construction */}
           {isBuildingSignature && (
@@ -612,7 +940,7 @@ export default function SignatureGenerator() {
             <button
               type="button"
               onClick={generateSignature}
-              disabled={isGenerating || !userData.prenom || !userData.nom}
+              disabled={isGenerating || (signatureType === 'service' ? !userData.nomService : (!userData.prenom || !userData.nom))}
               className="px-6 py-3 bg-[#004976] text-white font-bold rounded-xl hover:bg-[#003a5e] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#004976]/25 flex items-center gap-2 text-xs"
             >
               {isGenerating ? (
@@ -639,6 +967,27 @@ export default function SignatureGenerator() {
                 <Copy className="w-4 h-4 text-[#47B5E0]" />
               )}
               <span>{isCopiedHtml ? 'Copié !' : 'Copier pour Outlook (HTML)'}</span>
+            </button>
+
+            {/* Bouton 1-Click Copie Image Directe (PNG) */}
+            <button
+              type="button"
+              onClick={copySignatureImageToClipboard}
+              disabled={isCopyingImage}
+              className={`px-6 py-3 font-bold rounded-xl transition-all shadow-md flex items-center gap-2 text-xs ${
+                isCopiedImage
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white text-[#002D4A] border border-slate-200 hover:bg-slate-50 shadow-sm"
+              }`}
+            >
+              {isCopiedImage ? (
+                <CheckCircle className="w-4 h-4 text-white" />
+              ) : isCopyingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#004976]" />
+              ) : (
+                <ImageIcon className="w-4 h-4 text-[#FFB461]" />
+              )}
+              <span>{isCopiedImage ? 'Image copiée !' : 'Copier Image (PNG)'}</span>
             </button>
 
             {generationStatus === 'success' && (
@@ -703,6 +1052,7 @@ export default function SignatureGenerator() {
                 <EmailSimulator
                   userData={userData}
                   onCopyHtml={copySignatureHtmlToClipboard}
+                  onCopyImage={copySignatureImageToClipboard}
                   onDownloadPng={downloadSignature}
                 />
               ) : (

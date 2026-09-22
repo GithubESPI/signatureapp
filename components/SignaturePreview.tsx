@@ -8,7 +8,7 @@ interface SignaturePreviewProps {
 }
 
 export default function SignaturePreview({ userData, className = "" }: SignaturePreviewProps) {
-  const fullName = `${userData.prenom || 'Prénom'} ${userData.nom || 'NOM'}`.trim();
+  const fullName = userData.nomService ? userData.nomService : `${userData.prenom || 'Prénom'} ${userData.nom || 'NOM'}`.trim();
   
   // Formatage propre de l'adresse
   const cleanAdresse = userData.adresse?.replace(/,/g, '')?.trim() || '';

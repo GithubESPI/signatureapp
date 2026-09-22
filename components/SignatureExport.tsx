@@ -7,7 +7,7 @@ interface SignatureExportProps {
 }
 
 export default function SignatureExport({ userData }: SignatureExportProps) {
-  const fullName = `${userData.prenom || 'Prénom'} ${userData.nom || 'NOM'}`.trim();
+  const fullName = userData.nomService ? userData.nomService : `${userData.prenom || 'Prénom'} ${userData.nom || 'NOM'}`.trim();
 
   // Formatage propre de l'adresse
   const cleanAdresse = userData.adresse?.replace(/,/g, '')?.trim() || '';

@@ -27,20 +27,23 @@ interface UserData {
   ville: string;
   codePostal: string;
   email: string;
+  nomService?: string;
 }
 
 interface EmailSimulatorProps {
   userData: UserData;
   onCopyHtml?: () => void;
+  onCopyImage?: () => void;
   onDownloadPng?: () => void;
 }
 
-export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: EmailSimulatorProps) {
+export default function EmailSimulator({ userData, onCopyHtml, onCopyImage, onDownloadPng }: EmailSimulatorProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [viewMode, setViewMode] = useState<"html" | "image">("html");
   const [copied, setCopied] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
 
-  const fullName = `${userData.prenom || 'Jean'} ${userData.nom || 'DUPONT'}`;
+  const fullName = userData.nomService ? userData.nomService : `${userData.prenom || 'Jean'} ${userData.nom || 'DUPONT'}`;
   const emailAddr = userData.email || 'j.dupont@groupe-espi.fr';
   const cleanAdresse = (userData.adresse || '').replace(/,/g, '').trim();
   const cleanCP = (userData.codePostal || '').replace(/,/g, '').trim();
@@ -67,6 +70,14 @@ export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: 
       onCopyHtml();
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
+  const handleCopyImage = () => {
+    if (onCopyImage) {
+      onCopyImage();
+      setCopiedImage(true);
+      setTimeout(() => setCopiedImage(false), 2500);
     }
   };
 
@@ -209,6 +220,8 @@ export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: 
                     fontSize: "13px",
                     color: "#ffffff",
                     backgroundColor: "#004976",
+                    background: "#004976 linear-gradient(0deg, #004976, #004976)",
+                    backgroundImage: "linear-gradient(0deg, #004976, #004976)",
                     borderRadius: "8px",
                     borderCollapse: "collapse",
                     minWidth: "540px",
@@ -222,7 +235,11 @@ export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: 
                         verticalAlign: "middle",
                         textAlign: "center",
                         width: "140px",
-                        borderRight: "1px solid rgba(255,255,255,0.2)",
+                        borderRight: "1px solid #1a5b83",
+                        backgroundColor: "#004976",
+                        background: "#004976 linear-gradient(0deg, #004976, #004976)",
+                        backgroundImage: "linear-gradient(0deg, #004976, #004976)",
+                        color: "#ffffff",
                       }}>
                         <a href="https://www.groupe-espi.fr" target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "block" }}>
                           <img 
@@ -241,6 +258,9 @@ export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: 
                         verticalAlign: "middle",
                         color: "#ffffff",
                         fontFamily: "'Commissioner', Arial, Helvetica, sans-serif",
+                        backgroundColor: "#004976",
+                        background: "#004976 linear-gradient(0deg, #004976, #004976)",
+                        backgroundImage: "linear-gradient(0deg, #004976, #004976)",
                       }}>
                         <div style={{ fontSize: "18px", fontWeight: "bold", color: "#ffffff", marginBottom: "4px", letterSpacing: "0.2px" }}>
                           {fullName}
@@ -310,6 +330,22 @@ export default function EmailSimulator({ userData, onCopyHtml, onDownloadPng }: 
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5 text-[#47B5E0]" />}
               <span>{copied ? "Copié !" : "Copier le HTML Outlook"}</span>
             </button>
+
+            {onCopyImage && (
+              <button
+                onClick={handleCopyImage}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition-all border flex items-center gap-1.5 ${
+                  copiedImage
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : isDarkMode
+                      ? "bg-[#002D4A] text-white border-[#004976] hover:bg-[#003A5E]"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-sm"
+                }`}
+              >
+                {copiedImage ? <Check className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5 text-[#FFB461]" />}
+                <span>{copiedImage ? "Image copiée !" : "Copier Image (PNG)"}</span>
+              </button>
+            )}
 
             {onDownloadPng && (
               <button

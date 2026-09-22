@@ -12,6 +12,7 @@ export interface UserData {
   ville: string;
   codePostal: string;
   email: string;
+  nomService?: string;
 }
 
 export class WordTemplateProcessor {
